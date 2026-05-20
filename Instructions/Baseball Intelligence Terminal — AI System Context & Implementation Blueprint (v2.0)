@@ -1,0 +1,316 @@
+# Baseball Intelligence Terminal — AI System Context & Implementation Blueprint (v2.0)
+
+This document is the **Single Source of Truth** for the **Baseball Intelligence Terminal**. It merges core system context, architectural mandates, and advanced implementation blueprints to guide an AI (like Claude) in building, maintaining, and scaling a professional-grade MLB analytics system.
+
+---
+
+## 📋 Table of Contents
+1. [Project Identity & Core Philosophy](#1-project-identity--core-philosophy)
+2. [System Purpose & Success Criteria](#2-system-purpose--success-criteria)
+3. [Critical Architecture Mandates (MUST FOLLOW)](#3-critical-architecture-mandates)
+4. [Data Architecture & Proxy Routing](#4-data-architecture--proxy-routing)
+5. [Analytics Philosophy & Percentile Engine](#5-analytics-philosophy--percentile-engine)
+6. [UI / Visual System Rules (STRICT SPEC)](#6-ui--visual-system-rules)
+7. [Data Modeling & Internal Structures](#7-data-modeling--internal-structures)
+8. [Advanced Analytics & Meta Metrics (CAS, DQS, DPI, TPVI)](#8-advanced-analytics--meta-metrics)
+9. [UI Engine & Modular Rendering](#9-ui-engine--modular-rendering)
+10. [Scouting & Valuation Engines](#10-scouting--valuation-engines)
+11. [Advanced Scouting Panels (Right Column)](#11-advanced-scouting-panels)
+12. [Performance, Caching & Production Polish](#12-performance-caching--production-polish)
+13. [Elite Features & Future Extensions](#13-elite-features--future-extensions)
+14. [Final Implementation Checklist](#14-final-implementation-checklist)
+
+---
+
+## 1. Project Identity & Core Philosophy
+
+### Project Identity
+This is a **Baseball Intelligence Terminal** — not a consumer website. It functions as:
+*   An **MLB front-office analytics system**.
+*   A **scouting department evaluation tool**.
+*   A **Statcast / Savant visualization layer**.
+*   A **Bloomberg-style data terminal**.
+
+### Core Philosophy
+*   **Dense but controlled information:** Every panel has a purpose.
+*   **No decorative UI:** All visuals are functional.
+*   **Scan Speed:** Prioritize the ability to quickly extract actionable insights.
+*   **Professional Tone:** Avoid "fan site" aesthetics; use high-density, high-utility layouts.
+
+---
+
+## 2. System Purpose & Success Criteria
+
+### 🧠 System Purpose
+The system transforms raw baseball data into:
+1.  **Decision-ready insights** (e.g., "What to throw this hitter?").
+2.  **Player evaluations** (Scouting-grade outputs).
+3.  **Comparative league context** (Percentiles, value, ranks).
+
+### ✅ Success Criteria
+The system is correct when:
+*   All data is real or clearly marked missing ("—" or "N/A").
+*   Percentiles are meaningful, consistent, and direction-aware.
+*   UI is dense but readable with a clear hierarchy.
+*   **Nothing is hardcoded:** The system must be entirely data-driven.
+
+---
+
+## 3. Critical Architecture Mandates (MUST FOLLOW)
+
+🚨 **DO NOT DEVIATE FROM THESE RULES:**
+
+### ❌ No Monolithic HTML
+*   **Problem:** Hardcoding player profiles (e.g., a static Shohei Ohtani block) kills scalability.
+*   **Mandate:** Use a **JS-driven UI**. The `#prof-content` container should be empty on load and populated dynamically.
+
+```javascript
+// ✅ CORRECT: Dynamic Rendering
+function renderPlayerProfile(model) {
+  const root = document.getElementById('prof-content');
+  root.innerHTML = `
+    <div class="profile-layout">
+      ${renderProfileHeader(model)}
+      <div class="center-panel">
+        ${renderKPIs(model)}
+        <div id="pp-bars"></div>
+      </div>
+      ${renderProfileRightColumn(model)}
+    </div>
+  `;
+  renderPercentilesGrouped('pp-bars', model.grouped);
+}
+```
+
+### ❌ No Inline Styles
+*   **Problem:** `<div style="font-family:Bebas Neue; font-size:20px">` is unmaintainable.
+*   **Mandate:** Use CSS classes for everything.
+
+```css
+/* ✅ CORRECT: CSS Classes */
+.title-xl {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 24px;
+  letter-spacing: 2px;
+  color: var(--text-primary);
+}
+```
+
+### ❌ No Fabricated Data
+*   **Mandate:** If data is missing, show "—". **DO NOT** guess, simulate, or fill with averages.
+
+---
+
+## 4. Data Architecture & Proxy Routing
+
+### 1) All Data Flows Through Proxies
+*   **NEVER** call external APIs directly from the browser.
+*   **ALWAYS** use serverless proxy routes:
+    *   `/api/mlb?path=...`
+    *   `/api/savant?endpoint=...`
+*   **Benefits:** Bypasses CORS, enables centralized caching, and ensures consistent behavior.
+
+### 2) Data Sources
+*   **MLB Stats API:** Roster, career stats, splits.
+*   **Baseball Savant (Statcast):** xwOBA, xBA, xSLG, EV metrics, HardHit%, Barrel%, sprint speed, OAA.
+*   **Derived (Internal):** Percentiles, z-scores, scouting grades (20–80), player valuation ($/WAR).
+
+---
+
+## 5. Analytics Philosophy & Percentile Engine
+
+### 1) Percentiles are Primary UI
+The system prefers **Percentiles > Raw Stats**. All key metrics must be expressed as a percentile (0–100) with color-coded meaning.
+
+### 2) Direction Matters (Inversion)
+Some metrics invert (e.g., **K%**, **Chase%**, **Whiff%** are better when **LOW**). The engine must handle this:
+
+```javascript
+// ✅ Direction-Aware Percentile Engine
+function computePercentile(arr, val, higherBetter) {
+  if (val == null) return null;
+  const clean = arr.filter(x => x != null && isFinite(x)).sort((a, b) => a - b);
+  if (clean.length < 10) return null;
+
+  let idx = clean.findIndex(v => v >= val);
+  if (idx < 0) idx = clean.length - 1;
+
+  let pct = Math.round((idx / clean.length) * 100);
+  if (!higherBetter) pct = 100 - pct;
+
+  return Math.max(1, Math.min(99, pct)); // Clamp 1-99
+}
+```
+
+---
+
+## 6. UI / Visual System Rules (STRICT SPEC)
+
+### 1) Percentile Bars (The "Savant" Spec)
+Each bar must follow this exact structure:
+*   **Track:** Light gray background.
+*   **Fill:** Colored based on value.
+*   **Bubble:** A circle (~22px) containing the percentile number, sitting **ON** the fill edge.
+
+```css
+/* ✅ Percentile Bar CSS */
+.pct-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 60px;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 0;
+}
+.pct-track {
+  position: relative;
+  height: 18px;
+  background: rgba(255, 255, 255, .1);
+  border-radius: 10px;
+}
+.pct-fill {
+  height: 100%;
+  border-radius: 10px;
+  transition: width .6s ease;
+}
+.pct-bubble {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+}
+```
+
+### 2) Color = Meaning
+*   **Red (≥ 80):** Elite / Exploit
+*   **Orange (60-79):** Above Average
+*   **Gray (40-59):** Average
+*   **Blue (20-39):** Below Average
+*   **Dark Blue (< 20):** Poor
+
+---
+
+## 7. Data Modeling & Internal Structures
+
+### Unified Player Model
+Every player load must convert raw data into a single `PlayerAnalyticsModel` object.
+
+```javascript
+const PlayerAnalyticsModel = {
+  info: { name: '', team: '', age: null, position: '' },
+  raw: { mlb: {}, savant: {}, expected: {} },
+  derived: { iso: null, bbRate: null, kRate: null, kbb: null },
+  league: { xwOBA: [], xBA: [], xSLG: [], EV: [], HardHit: [], Barrel: [] },
+  percentiles: {},
+  grouped: [] // VALUE, BATTING, PLATE DISCIPLINE
+};
+```
+
+---
+
+## 8. Advanced Analytics & Meta Metrics
+
+### 🚀 Tier 1: The KPI Row
+Add a headline row **ABOVE** the percentile bars to show "Meta Metrics." These reduce cognitive load by blending multiple stats.
+
+*   **CAS (Contact Authority Score):** Weighted blend of xwOBA, Barrel%, and HardHit%.
+*   **DQS (Decision Quality Score):** Blend of BB%, K%, and Chase%.
+*   **DPI (Damage Potential Index):** Measures game power (xSLG, Barrel%, Avg EV).
+*   **TPVI (True Player Value Index):** The "All-In" offensive impact score.
+
+```javascript
+function contactAuthority(p) {
+  return Math.round(0.5 * p.XWOBA.pct + 0.3 * p.HARDHIT.pct + 0.2 * p.BARREL.pct);
+}
+```
+
+---
+
+## 9. UI Engine & Modular Rendering
+
+### Modular Renderers
+**NEVER** rebuild the entire page. Use micro-renderers for specific components:
+*   `renderKPIs(model)`
+*   `renderPercentiles(targetId, items)`
+*   `renderScouting(model)`
+
+### Panel Hierarchy
+Use panel types to create visual structure:
+*   `.panel.primary`: Core data (e.g., Percentiles).
+*   `.panel.secondary`: Detailed stats.
+*   `.panel.tertiary`: Supporting info (e.g., Scout Notes).
+
+---
+
+## 10. Scouting & Valuation Engines
+
+### Scouting Grades (20–80)
+*   **Math:** `Grade = clamp(20, 80, round(50 + 10 * zScore))`.
+*   **Fallback:** If real scouting data is missing, use stats-derived proxies (e.g., xBA for Hit tool) but **label them clearly** as proxies.
+
+### Player Valuation ($)
+*   **Market Value:** `WAR * $7.125M`.
+*   **Range:** Show ±1 WAR band (e.g., "Range: $14.2M - $28.5M").
+*   **Surplus:** `Market Value - Contract Cost`.
+
+---
+
+## 11. Advanced Scouting Panels (Right Column)
+
+The right column contains the "Intelligence Panels":
+1.  **Pitch Type Vulnerability Matrix:** xSLG vs. FB, SL, CB, CH.
+2.  **Count Usage Matrix:** Pitch frequency by count (0-0, 1-2, etc.).
+3.  **Zone Heat Map:** 3x3 grid showing damage potential (xSLG) by location.
+4.  **Arsenal Table:** Usage%, Velocity, Spin, and Whiff% for every pitch in the repertoire.
+
+---
+
+## 12. Performance, Caching & Production Polish
+
+### Multi-Layer Caching
+1.  **Browser Cache:** Use `sessionStorage` for Savant CSVs.
+2.  **In-Memory Cache:** Use a `PLAYER_CACHE` object to make profile switching instant.
+3.  **Edge Cache:** Backend headers (`Cache-Control: s-maxage=3600`).
+
+### UI Polish
+*   **Midpoint Markers:** Add a vertical line at the 50th percentile on tracks.
+*   **Elite Highlights:** Add a glow effect (`.elite-glow`) for percentiles ≥ 90.
+*   **Hover Tooltips:** Show raw values and descriptions on hover.
+
+---
+
+## 13. Elite Features & Future Extensions
+
+### 🧠 Insight Engine
+Automatically generate text-based insights based on the data:
+*   *Example:* "Elite expected production" if xwOBA > 90th percentile.
+*   *Example:* "High damage on inner-up fastballs" based on Zone Heat Map.
+
+### 🧩 Config-Driven Metrics
+Instead of hardcoding metrics in the UI, use a central config:
+```javascript
+const METRIC_CONFIG = {
+  XWOBA: { label: 'xwOBA', higher: true },
+  K: { label: 'K%', higher: false }
+};
+// Adding a new metric now takes 1 line of code.
+```
+
+---
+
+## 14. Final Implementation Checklist
+
+*   [ ] **Architecture:** Hardcoded profiles removed; UI is JS-driven.
+*   [ ] **Data:** All calls go through proxies; no fabricated data.
+*   [ ] **Visuals:** Savant-style bubble bars implemented; 3-column layout active.
+*   [ ] **Analytics:** KPI row (CAS, DQS, etc.) added above percentiles.
+*   [ ] **Performance:** `sessionStorage` and `PLAYER_CACHE` active.
+*   [ ] **Logic:** Percentiles are direction-aware (K% handled correctly).
+
+---
+**End of Blueprint.**

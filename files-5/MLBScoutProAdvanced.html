@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MLB Scout Pro - Advanced Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --orange:#e8722a;--orange-dim:rgba(232,114,42,.15);--blue-bright:#5ab4f5;
+  --green:#4dce8a;--red:#e85a5a;--gold:#f5c842;--navy:#07102d;
+  --navy-mid:#0d1c3a;--navy-light:#0f2040;--navy-border:#1e3055;--text-dim:#a0b4cc;
+}
+body{font-family:'Barlow',sans-serif;background:radial-gradient(ellipse at top,#c94e10 0%,#1a0800 35%,#030a1a 70%,#01050f 100%);color:#fff;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:28px 28px;pointer-events:none;z-index:0;}
+.hdr{position:sticky;top:0;z-index:100;background:rgba(3,8,20,.92);border-bottom:2px solid rgba(232,114,42,.3);backdrop-filter:blur(16px);padding:10px 20px;}
+.hdr-inner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.logo-block .season-label{font-family:Barlow Condensed,sans-serif;font-size:10px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--orange);margin-bottom:2px;}
+.logo-block .dash-title{font-family:Bebas Neue,sans-serif;font-size:30px;letter-spacing:3px;line-height:1;background:linear-gradient(135deg,#fff 40%,#e8722a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.team-name-display{font-family:Bebas Neue,sans-serif;font-size:24px;letter-spacing:2px;}
+.hdr-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+select.tpick{background:rgba(13,28,58,.8);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#fff;padding:7px 12px;font-family:Barlow Condensed,sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23a0b4cc'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;min-width:190px;}
+select.tpick:focus{outline:none;border-color:var(--orange)}
+.body{padding:16px 18px;position:relative;z-index:1}
+.panel{background:rgba(7,16,45,.88);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:18px;backdrop-filter:blur(10px);box-shadow:0 8px 32px rgba(0,0,0,.4);}
+.panel-title{font-family:Bebas Neue,sans-serif;font-size:26px;letter-spacing:3px;border-bottom:1px solid rgba(255,255,255,.07);padding-bottom:10px;margin-bottom:14px;}
+.stat-label{font-family:Barlow Condensed,sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:3px;}
+.stat-val{font-family:Bebas Neue,sans-serif;font-size:40px;line-height:1;letter-spacing:1px;color:#fff;}
+.stat-rank{font-family:Barlow Condensed,sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--orange);margin-top:2px;}
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{text-align:left;padding:6px 8px;color:var(--text-dim);font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border-bottom:1px solid var(--navy-border);font-family:Barlow Condensed,sans-serif;}
+.tbl td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.04)}
+.tbl tr:last-child td{border-bottom:none}.tbl tr:hover td{background:rgba(255,255,255,.03);cursor:pointer}
+.badge{display:inline-block;padding:2px 7px;border-radius:5px;font-size:10px;font-weight:700;letter-spacing:.5px;font-family:Barlow Condensed,sans-serif}
+.metric-row{display:grid;grid-template-columns:150px 1fr 50px;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.metric-label{font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--text-dim)}
+.metric-bar{height:20px;background:rgba(255,255,255,.05);border-radius:6px;overflow:hidden}
+.metric-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--orange));border-radius:6px;transition:width .3s}
+.metric-val{font-family:Bebas Neue,sans-serif;font-size:18px;font-weight:bold;text-align:right}
+.back-btn{background:rgba(13,28,58,.6);border:1px solid rgba(255,255,255,.1);border-radius:7px;color:var(--text-dim);padding:6px 12px;font-family:Barlow Condensed,sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;cursor:pointer;transition:all .2s;}
+.back-btn:hover{background:rgba(232,114,42,.15);border-color:var(--orange);color:#fff}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.grade-badge{display:inline-block;width:60px;height:60px;background:rgba(232,114,42,.15);border:2px solid var(--orange);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:Bebas Neue,sans-serif;font-size:28px;font-weight:bold;color:var(--orange)}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-inner">
+    <div class="logo-block">
+      <div class="season-label">2024 SEASON</div>
+      <div class="dash-title">MLB SCOUT PRO</div>
+    </div>
+    <div class="hdr-right">
+      <select class="tpick" id="team-select" onchange="changeTeam()">
+        <option value="">Select Team...</option>
+        <option value="LAD">Los Angeles Dodgers</option>
+        <option value="NYY">New York Yankees</option>
+        <option value="BOS">Boston Red Sox</option>
+        <option value="HOU">Houston Astros</option>
+        <option value="ATL">Atlanta Braves</option>
+        <option value="NYM">New York Mets</option>
+      </select>
+      <button class="back-btn" id="back-btn" style="display:none" onclick="viewRoster()">BACK TO ROSTER</button>
+    </div>
+  </div>
+</div>
+
+<div class="body">
+  <!-- ROSTER VIEW -->
+  <div id="roster-view">
+    <div class="panel" style="margin-bottom:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;">
+        <div>
+          <div style="font-family:Bebas Neue,sans-serif;font-size:42px;color:var(--orange);" id="tname">SELECT TEAM</div>
+          <div style="font-family:Barlow Condensed,sans-serif;font-size:12px;color:var(--text-dim);margin-top:5px" id="team-record">Record: -- | Division: --</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">ROSTER</div>
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>NAME</th>
+            <th>POS</th>
+            <th>AVG</th>
+            <th>HR</th>
+            <th>RBI</th>
+            <th>OPS</th>
+          </tr>
+        </thead>
+        <tbody id="roster-table">
+          <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-dim);">Select a team to view roster</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PLAYER DETAIL VIEW -->
+  <div id="player-view" style="display:none;">
+    <div class="panel" style="margin-bottom:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap">
+        <div>
+          <div style="font-family:Bebas Neue,sans-serif;font-size:42px;color:#fff;margin-bottom:5px" id="player-name">PLAYER NAME</div>
+          <div style="font-family:Barlow Condensed,sans-serif;font-size:12px;color:var(--text-dim)" id="player-meta">POS • Team</div>
+        </div>
+        <div class="grade-badge" id="jarvis-grade">A</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-title" style="font-size:18px;margin-bottom:12px">OFFENSIVE METRICS</div>
+        <div id="offensive-metrics"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title" style="font-size:18px;margin-bottom:12px">FIT ANALYSIS</div>
+        <div id="fit-analysis"></div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:20px;">
+      <div class="panel-title" style="font-size:18px;margin-bottom:12px">SCOUTING REPORT</div>
+      <div id="scouting-report" style="line-height:1.6;color:var(--text-dim)"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const LEAGUE_STATS = {
+  avgMean: 0.257,
+  avgStd: 0.028,
+  opsMean: 0.748,
+  opsStd: 0.089,
+  hrMean: 18,
+  hrStd: 11,
+  rbiMean: 72,
+  rbiStd: 28
+};
+
+const TEAM_DATA = {
+  "LAD": {
+    name: "Los Angeles Dodgers",
+    record: "91-71",
+    division: "NL West",
+    stats: { avg: 0.258, ops: 0.748 },
+    players: [
+      { name: "Shohei Ohtani", pos: "DH/OF", avg: 0.285, hr: 42, rbi: 107, ops: 0.886 },
+      { name: "Freddie Freeman", pos: "1B", avg: 0.282, hr: 16, rbi: 89, ops: 0.801 },
+      { name: "Mookie Betts", pos: "OF", avg: 0.292, hr: 29, rbi: 94, ops: 0.889 },
+      { name: "Will Smith", pos: "C", avg: 0.250, hr: 20, rbi: 72, ops: 0.791 },
+      { name: "Miguel Rojas", pos: "SS", avg: 0.249, hr: 8, rbi: 48, ops: 0.682 },
+      { name: "Chris Taylor", pos: "OF", avg: 0.231, hr: 14, rbi: 51, ops: 0.721 },
+      { name: "Gavin Lux", pos: "2B", avg: 0.267, hr: 24, rbi: 85, ops: 0.802 }
+    ]
+  },
+  "NYY": {
+    name: "New York Yankees",
+    record: "94-68",
+    division: "AL East",
+    stats: { avg: 0.263, ops: 0.772 },
+    players: [
+      { name: "Aaron Judge", pos: "OF", avg: 0.288, hr: 58, rbi: 144, ops: 0.923 },
+      { name: "Juan Soto", pos: "OF", avg: 0.271, hr: 41, rbi: 109, ops: 0.884 },
+      { name: "Giancarlo Stanton", pos: "OF", avg: 0.269, hr: 27, rbi: 72, ops: 0.823 },
+      { name: "Anthony Volpe", pos: "SS", avg: 0.241, hr: 12, rbi: 60, ops: 0.698 },
+      { name: "Gleyber Torres", pos: "2B", avg: 0.257, hr: 15, rbi: 73, ops: 0.742 }
+    ]
+  },
+  "BOS": {
+    name: "Boston Red Sox",
+    record: "84-78",
+    division: "AL East",
+    stats: { avg: 0.251, ops: 0.721 },
+    players: [
+      { name: "Rafael Devers", pos: "3B", avg: 0.272, hr: 32, rbi: 101, ops: 0.851 },
+      { name: "Tyler O'Neill", pos: "OF", avg: 0.268, hr: 31, rbi: 88, ops: 0.812 },
+      { name: "Jarren Duran", pos: "2B", avg: 0.284, hr: 21, rbi: 84, ops: 0.815 },
+      { name: "Xander Bogaerts", pos: "SS", avg: 0.288, hr: 13, rbi: 73, ops: 0.747 }
+    ]
+  },
+  "HOU": {
+    name: "Houston Astros",
+    record: "88-74",
+    division: "AL West",
+    stats: { avg: 0.261, ops: 0.758 },
+    players: [
+      { name: "Kyle Tucker", pos: "OF", avg: 0.281, hr: 23, rbi: 82, ops: 0.823 },
+      { name: "Jose Altuve", pos: "2B", avg: 0.275, hr: 16, rbi: 74, ops: 0.762 },
+      { name: "Yordan Alvarez", pos: "DH/OF", avg: 0.283, hr: 19, rbi: 72, ops: 0.815 },
+      { name: "Alex Bregman", pos: "3B", avg: 0.260, hr: 26, rbi: 99, ops: 0.808 },
+      { name: "Corey Seager", pos: "SS", avg: 0.279, hr: 34, rbi: 105, ops: 0.889 }
+    ]
+  },
+  "ATL": {
+    name: "Atlanta Braves",
+    record: "89-73",
+    division: "NL East",
+    stats: { avg: 0.254, ops: 0.735 },
+    players: [
+      { name: "Ronald Acuña Jr.", pos: "OF", avg: 0.283, hr: 40, rbi: 112, ops: 0.871 },
+      { name: "Matt Olson", pos: "1B", avg: 0.259, hr: 34, rbi: 103, ops: 0.818 },
+      { name: "Marcell Ozuna", pos: "DH", avg: 0.287, hr: 29, rbi: 89, ops: 0.839 },
+      { name: "Austin Riley", pos: "3B", avg: 0.270, hr: 28, rbi: 97, ops: 0.802 }
+    ]
+  },
+  "NYM": {
+    name: "New York Mets",
+    record: "86-76",
+    division: "NL East",
+    stats: { avg: 0.248, ops: 0.712 },
+    players: [
+      { name: "Pete Alonso", pos: "DH/1B", avg: 0.271, hr: 34, rbi: 88, ops: 0.821 },
+      { name: "Francisco Lindor", pos: "SS", avg: 0.248, hr: 33, rbi: 91, ops: 0.791 },
+      { name: "Brandon Nimmo", pos: "OF", avg: 0.235, hr: 19, rbi: 64, ops: 0.739 }
+    ]
+  }
+};
+
+let currentTeam = null;
+let currentPlayer = null;
+
+function changeTeam() {
+  const teamCode = document.getElementById('team-select').value;
+  if (teamCode) {
+    currentTeam = TEAM_DATA[teamCode];
+    viewRoster();
+  }
+}
+
+function viewRoster() {
+  if (!currentTeam) return;
+  
+  document.getElementById('roster-view').style.display = 'block';
+  document.getElementById('player-view').style.display = 'none';
+  document.getElementById('back-btn').style.display = 'none';
+  
+  document.getElementById('tname').textContent = currentTeam.name.toUpperCase();
+  document.getElementById('team-record').textContent = 
+    `Record: ${currentTeam.record} | Division: ${currentTeam.division}`;
+  
+  let rosterHTML = '';
+  currentTeam.players.forEach(p => {
+    rosterHTML += `
+      <tr onclick="viewPlayer('${p.name}')">
+        <td style="cursor:pointer;color:var(--blue-bright)">${p.name}</td>
+        <td>${p.pos}</td>
+        <td>${p.avg.toFixed(3)}</td>
+        <td>${p.hr}</td>
+        <td>${p.rbi}</td>
+        <td>${p.ops.toFixed(3)}</td>
+      </tr>
+    `;
+  });
+  document.getElementById('roster-table').innerHTML = rosterHTML;
+}
+
+function viewPlayer(playerName) {
+  currentPlayer = currentTeam.players.find(p => p.name === playerName);
+  if (!currentPlayer) return;
+  
+  document.getElementById('roster-view').style.display = 'none';
+  document.getElementById('player-view').style.display = 'block';
+  document.getElementById('back-btn').style.display = 'block';
+  
+  // Header
+  document.getElementById('player-name').textContent = currentPlayer.name.toUpperCase();
+  document.getElementById('player-meta').textContent = `${currentPlayer.pos} • ${currentTeam.name}`;
+  
+  // Calculate metrics
+  const avgZscore = (currentPlayer.avg - LEAGUE_STATS.avgMean) / LEAGUE_STATS.avgStd;
+  const opsZscore = (currentPlayer.ops - LEAGUE_STATS.opsMean) / LEAGUE_STATS.opsStd;
+  const hrPercentile = percentile(currentPlayer.hr, LEAGUE_STATS.hrMean, LEAGUE_STATS.hrStd);
+  const rbiPercentile = percentile(currentPlayer.rbi, LEAGUE_STATS.rbiMean, LEAGUE_STATS.rbiStd);
+  
+  const jarvisScore = Math.round(
+    50 + (avgZscore * 8) + (opsZscore * 10) + (hrPercentile / 10)
+  );
+  const grade = jarvisScore >= 85 ? 'A' : jarvisScore >= 75 ? 'B' : jarvisScore >= 65 ? 'C' : 'D';
+  
+  document.getElementById('jarvis-grade').textContent = grade;
+  
+  // Offensive metrics
+  let offensiveHTML = `
+    <div class="metric-row">
+      <div class="metric-label">BATTING AVG</div>
+      <div class="metric-bar"><div class="metric-fill" style="width:${Math.min(currentPlayer.avg * 200, 100)}%"></div></div>
+      <div class="metric-val">${currentPlayer.avg.toFixed(3)}</div>
+    </div>
+    <div class="metric-row">
+      <div class="metric-label">OPS</div>
+      <div class="metric-bar"><div class="metric-fill" style="width:${Math.min((currentPlayer.ops / 1.0) * 100, 100)}%"></div></div>
+      <div class="metric-val">${currentPlayer.ops.toFixed(3)}</div>
+    </div>
+    <div class="metric-row">
+      <div class="metric-label">HOME RUNS</div>
+      <div class="metric-bar"><div class="metric-fill" style="width:${Math.min((currentPlayer.hr / 60) * 100, 100)}%"></div></div>
+      <div class="metric-val">${currentPlayer.hr}</div>
+    </div>
+    <div class="metric-row">
+      <div class="metric-label">RBIs</div>
+      <div class="metric-bar"><div class="metric-fill" style="width:${Math.min((currentPlayer.rbi / 140) * 100, 100)}%"></div></div>
+      <div class="metric-val">${currentPlayer.rbi}</div>
+    </div>
+  `;
+  document.getElementById('offensive-metrics').innerHTML = offensiveHTML;
+  
+  // Fit analysis
+  const fitScore = calculateFit(currentPlayer, currentTeam);
+  let fitHTML = `
+    <div style="margin-bottom:15px;">
+      <div class="stat-label">FIT SCORE vs TEAM NEEDS</div>
+      <div class="metric-bar" style="height:30px;margin-bottom:10px">
+        <div class="metric-fill" style="width:${fitScore}%;height:100%"></div>
+      </div>
+      <div class="stat-val">${fitScore}/100</div>
+    </div>
+  `;
+  
+  if (currentTeam.stats.ops < 0.740) {
+    fitHTML += `<div style="padding:10px;background:rgba(77,206,138,.1);border-left:3px solid var(--green);margin-bottom:10px;font-size:12px">
+      <strong style="color:var(--green)">✓ POWER FIT</strong><br>Team needs offensive production. Your profile matches.
+    </div>`;
+  }
+  if (currentPlayer.rbi > 100) {
+    fitHTML += `<div style="padding:10px;background:rgba(232,114,42,.1);border-left:3px solid var(--orange);margin-bottom:10px;font-size:12px">
+      <strong style="color:var(--orange)">✓ RBI PRODUCER</strong><br>Premium run-producer in loaded lineup.
+    </div>`;
+  }
+  
+  document.getElementById('fit-analysis').innerHTML = fitHTML;
+  
+  // Scouting report
+  let report = `<div style="color:var(--text-dim);font-size:13px;line-height:1.8">`;
+  
+  if (currentPlayer.avg > 0.280) {
+    report += `<p><strong style="color:var(--green)">Contact Skills:</strong> Elite batting average demonstrates excellent plate discipline and bat-to-ball ability.</p>`;
+  }
+  if (currentPlayer.hr > 30) {
+    report += `<p><strong style="color:var(--orange)">Power Profile:</strong> Sustained power production with 30+ homer capability. Impact bat in middle of order.</p>`;
+  }
+  if (currentPlayer.rbi > 100) {
+    report += `<p><strong style="color:var(--green)">Production:</strong> 100+ RBI pace indicates role as premier run producer. Strong OPS validates quality of hits.</p>`;
+  }
+  if (currentPlayer.ops > 0.850) {
+    report += `<p><strong style="color:var(--blue-bright)">Evaluation:</strong> Elite OPS suggests sustainable performance. Strong foundation for long-term production.</p>`;
+  } else if (currentPlayer.ops < 0.750) {
+    report += `<p><strong style="color:var(--orange);">Observation:</strong> Performance within league-average range. Room for development in efficiency metrics.</p>`;
+  }
+  
+  report += `</div>`;
+  document.getElementById('scouting-report').innerHTML = report;
+}
+
+function calculateFit(player, team) {
+  let score = 50;
+  
+  // Power gap analysis
+  if (team.stats.ops < 0.740) {
+    if (player.hr > 25) score += 20;
+    if (player.ops > 0.820) score += 15;
+  }
+  
+  // Consistency bonus
+  if (player.avg > 0.270) score += 10;
+  if (player.rbi > 100) score += 10;
+  
+  return Math.min(score, 100);
+}
+
+function percentile(value, mean, std) {
+  const z = (value - mean) / std;
+  return Math.round(50 + (z * 20)); // Normalize to 0-100
+}
+
+window.addEventListener('load', function() {
+  document.getElementById('team-select').value = 'LAD';
+  changeTeam();
+});
+</script>
+
+</body>
+</html>

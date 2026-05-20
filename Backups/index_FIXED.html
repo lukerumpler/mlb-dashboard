@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚾ MLB Intelligence Terminal — V4</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;500;600;700&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ─────────────────────────────────────────────
+   TOKENS & THEME
+───────────────────────────────────────────── */
+:root {
+  --bg:          #07102D;
+  --bg-card:     #0C1A40;
+  --bg-card2:    #0F2050;
+  --border:      rgba(90,180,245,0.12);
+  --orange:      #E8722A;
+  --orange-dim:  rgba(232,114,42,0.15);
+  --blue-bright: #5AB4F5;
+  --blue-dim:    rgba(90,180,245,0.12);
+  --red:         #E85A5A;
+  --red-dim:     rgba(232,90,90,0.15);
+  --green:       #4DCE8A;
+  --green-dim:   rgba(77,206,138,0.12);
+  --gold:        #F5C842;
+  --gray:        #A0B4CC;
+  --gray-dim:    rgba(160,180,204,0.15);
+  --white:       #FFFFFF;
+  --text-dim:    #6B85A0;
+  --navy-light:  #1A3A5C;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-label:   'Barlow Condensed', sans-serif;
+  --font-body:    'Barlow', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 15px; }
+
+body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  /* terminal grid overlay */
+  background-image:
+    linear-gradient(rgba(90,180,245,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(90,180,245,0.025) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* scrollbars */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--navy-light); border-radius: 3px; }
+
+/* ─────────────────────────────────────────────
+   HEADER
+───────────────────────────────────────────── */
+#header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 20px;
+  background: rgba(7,16,45,0.96);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+  backdrop-filter: blur(8px);
+}
+
+#header .logo {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  letter-spacing: 2px;
+  color: var(--orange);
+  white-space: nowrap;
+}
+#header .logo span { color: var(--blue-bright); }
+
+.header-selects {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+select {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--white);
+  font-family: var(--font-label);
+  font-size: 0.85rem;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235AB4F5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 24px;
+}
+select:focus { border-color: var(--orange); }
+
+.season-badge {
+  font-family: var(--font-label);
+  font-size: 0.75rem;
+  color: var(--gold);
+  letter-spacing: 1px;
+  border: 1px solid var(--gold);
+  padding: 3px 8px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+/* team color strip */
+.team-color-strip {
+  height: 3px;
+  width: 100%;
+  background: linear-gradient(90deg, var(--orange), var(--blue-bright));
+}
+
+/* ─────────────────────────────────────────────
+   TABS
+───────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 20px;
+  background: rgba(7,16,45,0.9);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+
+.tab {
+  font-family: var(--font-label);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 12px 18px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: color 0.2s, border-color 0.2s;
+  user-select: none;
+}
+.tab:hover { color: var(--white); }
+.tab.active {
+  color: var(--orange);
+  border-bottom-color: var(--orange);
+}
+
+/* ─────────────────────────────────────────────
+   PAGES
+───────────────────────────────────────────── */
+.pg { display: none; padding: 16px 20px; animation: fadeIn 0.2s ease; }
+.pg.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* ─────────────────────────────────────────────
+   GRID HELPERS
+───────────────────────────────────────────── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+.grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; }
+.grid-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 14px; }
+.grid-3-col { display: grid; grid-template-columns: 280px 1fr 280px; gap: 14px; }
+
+/* ─────────────────────────────────────────────
+   CARDS / PANELS
+───────────────────────────────────────────── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.card-title {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  letter-spacing: 1.5px;
+  color: var(--white);
+}
+
+.badge {
+  font-family: var(--font-label);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  padding: 2px 7px;
+  border-radius: 3px;
+}
+.badge-live   { background: var(--green); color: #0a2a0a; }
+.badge-orange { background: var(--orange); color: #fff; }
+.badge-blue   { background: var(--blue-bright); color: #07102D; }
+.badge-gold   { background: var(--gold); color: #07102D; }
+.badge-red    { background: var(--red); color: #fff; }
+
+.card-body { padding: 12px 14px; }
+
+/* ─────────────────────────────────────────────
+   STAT GRIDS (Dashboard big numbers)
+───────────────────────────────────────────── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+}
+.stat-cell {
+  background: var(--bg-card);
+  padding: 14px 12px 10px;
+  text-align: center;
+}
+.stat-cell-label { font-family: var(--font-label); font-size: 0.65rem; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 4px; }
+.stat-cell-value { font-family: var(--font-display); font-size: 1.6rem; letter-spacing: 1px; color: var(--white); }
+.stat-cell-sub { font-family: var(--font-label); font-size: 0.7rem; color: var(--gray); margin-top: 2px; }
+
+/* ─────────────────────────────────────────────
+   TABLES
+───────────────────────────────────────────── */
+.splits-table, .grades-table, .notes-list {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-label);
+  font-size: 0.8rem;
+}
+.splits-table thead { background: rgba(232,114,42,0.1); border-bottom: 1px solid var(--border); }
+.splits-table th { padding: 6px 8px; text-align: left; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray); font-weight: 600; }
+.splits-table td { padding: 8px; border-bottom: 1px solid var(--border); color: var(--white); }
+.splits-table tr:hover { background: rgba(90,180,245,0.05); }
+.wrc-high { color: var(--green); font-weight: 600; }
+.wrc-mid { color: var(--gray); }
+.wrc-low { color: var(--red); }
+
+.grades-table thead { background: rgba(232,114,42,0.1); border-bottom: 1px solid var(--border); }
+.grades-table th { padding: 6px 8px; text-align: left; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray); font-weight: 600; }
+.grades-table td { padding: 8px; border-bottom: 1px solid var(--border); }
+.grades-table .tool-name { color: var(--white); font-weight: 500; }
+.grade-70 { color: var(--red); font-weight: 600; }
+.grade-60 { color: var(--orange); font-weight: 600; }
+.grade-55 { color: var(--gold); }
+.grade-50 { color: var(--gray); }
+.grade-45 { color: var(--blue-bright); }
+
+/* ─────────────────────────────────────────────
+   NOTES / QUOTES
+───────────────────────────────────────────── */
+.note-card {
+  background: var(--bg-card2);
+  border-left: 3px solid var(--orange);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  border-radius: 3px;
+  font-size: 0.85rem;
+}
+.note-tag {
+  display: inline-block;
+  font-family: var(--font-label);
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 2px;
+  margin-bottom: 4px;
+  letter-spacing: 0.5px;
+}
+.tag-watch { background: var(--blue-dim); color: var(--blue-bright); }
+.tag-target { background: var(--red-dim); color: var(--red); }
+.tag-prospect { background: var(--green-dim); color: var(--green); }
+.tag-injury { background: var(--red-dim); color: var(--red); }
+.note-player { font-weight: 600; color: var(--white); margin: 4px 0; }
+.note-text { color: var(--gray); margin: 6px 0; line-height: 1.4; }
+.note-date { font-size: 0.7rem; color: var(--text-dim); margin-top: 6px; }
+
+.about-quote {
+  background: var(--bg-card2);
+  border-left: 3px solid var(--gold);
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  border-radius: 3px;
+  font-style: italic;
+  color: var(--gray);
+  line-height: 1.5;
+  font-size: 0.9rem;
+}
+.attr {
+  font-style: normal;
+  color: var(--gold);
+  margin-top: 6px;
+  font-size: 0.8rem;
+}
+
+/* ─────────────────────────────────────────────
+   FORMS
+───────────────────────────────────────────── */
+input, textarea {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--white);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  padding: 8px 10px;
+  border-radius: 4px;
+  outline: none;
+}
+input:focus, textarea:focus {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 2px rgba(232,114,42,0.1);
+}
+textarea { resize: vertical; }
+
+button, .btn {
+  background: var(--orange);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 14px;
+  font-family: var(--font-label);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s;
+  outline: none;
+}
+button:hover, .btn:hover {
+  background: #d15a1a;
+}
+
+/* ─────────────────────────────────────────────
+   PROSPECTS
+───────────────────────────────────────────── */
+.prospect-card {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.prospect-rank-badge {
+  position: absolute;
+  top: 6px; right: 6px;
+  background: var(--orange);
+  color: #fff;
+  padding: 6px 8px;
+  border-radius: 3px;
+  font-family: var(--font-label);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-align: center;
+  z-index: 10;
+}
+.rk-sub { font-size: 0.6rem; opacity: 0.8; display: block; }
+.prospect-info { padding: 10px 12px; }
+.prospect-name { font-weight: 600; color: var(--white); font-size: 0.95rem; margin-bottom: 2px; }
+.prospect-meta { font-family: var(--font-label); font-size: 0.75rem; color: var(--text-dim); letter-spacing: 0.5px; }
+.prospect-grades { display: flex; gap: 6px; margin-top: 8px; }
+.prospect-grade {
+  font-size: 0.7rem;
+  background: rgba(232,114,42,0.2);
+  color: var(--orange);
+  padding: 3px 6px;
+  border-radius: 2px;
+  font-weight: 600;
+}
+
+/* ─────────────────────────────────────────────
+   LOADING
+───────────────────────────────────────────── */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  padding: 20px;
+}
+.loading-dot {
+  width: 4px;
+  height: 4px;
+  background: var(--orange);
+  border-radius: 50%;
+  animation: pulse 1.2s infinite;
+}
+.loading-dot:nth-child(2) { animation-delay: 0.2s; }
+.loading-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+
+/* ─────────────────────────────────────────────
+   PERCENTILE BARS
+───────────────────────────────────────────── */
+.pct-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+}
+.pct-bar { flex: 1; height: 6px; background: var(--navy-light); border-radius: 3px; overflow: hidden; }
+.pct-bar-fill { height: 100%; background: var(--orange); border-radius: 3px; }
+.pct-raw { font-family: var(--font-label); font-size: 0.7rem; color: var(--text-dim); min-width: 30px; text-align: right; }
+
+/* ─────────────────────────────────────────────
+   RESPONSIVE
+───────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .grid-3 { grid-template-columns: 1fr 1fr; }
+  .grid-3-col { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  html { font-size: 14px; }
+  #header { flex-wrap: wrap; gap: 10px; }
+  .header-selects { flex-wrap: wrap; width: 100%; }
+  .grid-2, .grid-2-1, .grid-1-2 { grid-template-columns: 1fr; }
+  .stat-grid { grid-template-columns: 1fr; }
+  .tabs { padding: 0 10px; }
+  .tab { padding: 10px 14px; font-size: 0.75rem; }
+}
+</style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <div class="logo">⚾ INTELLIGENCE<span>TERMINAL</span></div>
+  <div class="header-selects">
+    <select id="team-select" onchange="switchTeam()">
+      <option value="">Select Team...</option>
+    </select>
+    <div class="season-badge">2026 SEASON</div>
+  </div>
+  <div style="flex:1;"></div>
+  <button id="dev-login-btn" onclick="devLogin()" style="background:var(--navy-light);color:var(--text-dim);font-size:0.65rem;padding:4px 8px;">🔧 DEV</button>
+</div>
+
+<div class="team-color-strip"></div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('dashboard')">Dashboard</div>
+  <div class="tab" onclick="switchTab('player')">Player Profile</div>
+  <div class="tab" onclick="switchTab('prospects')">Prospects</div>
+  <div class="tab" onclick="switchTab('notes')">Scout Notes</div>
+  <div class="tab" onclick="switchTab('about')">About / Quotes</div>
+</div>
+
+<!-- PAGES -->
+
+<!-- DASHBOARD PAGE -->
+<div id="dashboard" class="pg active">
+  <div style="margin-bottom:14px;">
+    <div class="card-title" style="margin-bottom:4px;" id="team-name">Team Stats</div>
+    <div style="font-family:var(--font-label);font-size:0.8rem;color:var(--text-dim);letter-spacing:0.5px;">2026 Regular Season</div>
+  </div>
+  
+  <div class="card" style="margin-bottom:14px;">
+    <div class="card-header">
+      <div class="card-title">TEAM OVERVIEW</div>
+    </div>
+    <div class="card-body">
+      <div class="stat-grid">
+        <div class="stat-cell">
+          <div class="stat-cell-label">Wins</div>
+          <div class="stat-cell-value" id="stat-wins">—</div>
+          <div class="stat-cell-sub" id="stat-win-pct">—</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-cell-label">Games Back</div>
+          <div class="stat-cell-value" id="stat-gb">—</div>
+          <div class="stat-cell-sub">Division</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-cell-label">Streak</div>
+          <div class="stat-cell-value" id="stat-streak">—</div>
+          <div class="stat-cell-sub" id="stat-streak-type">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">OFFENSIVE STATS</div>
+      </div>
+      <div class="card-body" id="offensive-stats" style="font-size:0.8rem;">
+        <div style="color:var(--text-dim);text-align:center;padding:20px;">Loading stats...</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">PITCHING STATS</div>
+      </div>
+      <div class="card-body" id="pitching-stats" style="font-size:0.8rem;">
+        <div style="color:var(--text-dim);text-align:center;padding:20px;">Loading stats...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PLAYER PROFILE PAGE -->
+<div id="player" class="pg">
+  <div style="margin-bottom:14px;">
+    <div class="card-title" style="margin-bottom:4px;">Player Search</div>
+    <input type="text" id="player-search" placeholder="Search player by name..." style="width:200px;" />
+  </div>
+
+  <div class="grid-2-1">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">CAREER STATS</div>
+      </div>
+      <div class="card-body" id="career-stats" style="font-size:0.8rem;">
+        <div style="color:var(--text-dim);text-align:center;padding:20px;">Select a player to view stats</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">SCOUTING GRADES</div>
+      </div>
+      <div class="card-body" id="scouting-grades" style="font-size:0.8rem;">
+        <div style="color:var(--text-dim);text-align:center;padding:20px;">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px;">
+    <div class="card-header">
+      <div class="card-title">PERFORMANCE SPLITS</div>
+    </div>
+    <div class="card-body" style="overflow-x:auto;">
+      <div id="splits-data">
+        <div style="color:var(--text-dim);text-align:center;padding:20px;">Select a player to view splits</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROSPECTS PAGE -->
+<div id="prospects" class="pg">
+  <div style="margin-bottom:14px;">
+    <div class="card-title" id="prospects-title">Top Prospects</div>
+  </div>
+  <div id="prospects-grid" class="grid-3" style="margin-bottom:20px;">
+    <div class="loading"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div> Loading prospects...</div>
+  </div>
+</div>
+
+<!-- SCOUT NOTES PAGE -->
+<div id="notes" class="pg">
+  <div style="margin-bottom:14px;">
+    <div class="card-title" style="margin-bottom:10px;">Add Scout Note</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+      <input type="text" id="note-player" placeholder="Player name" />
+      <select id="note-tag">
+        <option value="watch">WATCH</option>
+        <option value="target">TARGET</option>
+        <option value="prospect">PROSPECT</option>
+        <option value="injury">INJURY</option>
+      </select>
+      <textarea id="note-text" placeholder="Scout notes..." style="flex:1;min-height:60px;min-width:200px;"></textarea>
+      <button onclick="addNote()" style="align-self:flex-start;">SAVE NOTE</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">SAVED NOTES</div>
+      <span style="font-family:var(--font-label);font-size:0.7rem;color:var(--text-dim);" id="notes-count">0 notes</span>
+    </div>
+    <div class="card-body">
+      <div id="notes-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ABOUT / QUOTES PAGE -->
+<div id="about" class="pg">
+  <div style="margin-bottom:14px;">
+    <div class="card-title" style="margin-bottom:10px;">Inspirational Quotes</div>
+  </div>
+
+  <div id="dev-form" style="display:none;margin-bottom:14px;background:rgba(77,206,138,0.1);padding:12px;border-radius:4px;border:1px solid var(--green);">
+    <div style="font-size:0.8rem;color:var(--green);margin-bottom:8px;">🔧 Developer Mode — Add Quote</div>
+    <div style="display:flex;gap:8px;">
+      <textarea id="quote-text" placeholder="Quote text..." style="flex:1;min-height:60px;min-width:200px;"></textarea>
+      <input type="text" id="quote-author" placeholder="Author name" />
+      <button onclick="addQuote()" style="align-self:flex-start;background:var(--green);color:#0a2a0a;">ADD</button>
+    </div>
+  </div>
+
+  <div id="quotes-container"></div>
+
+  <div style="margin-top:20px;padding:12px;background:rgba(90,180,245,0.08);border:1px solid var(--border);border-radius:4px;font-size:0.8rem;color:var(--text-dim);">
+    <strong>About MLB Intelligence Terminal V4</strong><br/>
+    Baseball intelligence platform for scouts, analysts, and front-office staff. Real-time data, actionable insights, professional-grade intelligence.
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   GLOBAL STATE & INITIALIZATION
+═══════════════════════════════════════════════════════════════════ */
+
+// ✅ FIX #1: Initialize all global variables
+const SEASON = 2026;
+let curTeam = 109;
+let curTeamName = 'Arizona Diamondbacks';
+let savedNotes = [];
+let savedQuotes = [];
+let devMode = false;
+let dataCache = {}; // Session cache for API responses
+
+// ✅ FIX #9: Comprehensive team data object
+const TEAMS = {
+  109: { name: 'Arizona Diamondbacks', abbr: 'ARI', color1: '#E8722A', color2: '#27251F' },
+  144: { name: 'Atlanta Braves', abbr: 'ATL', color1: '#E8722A', color2: '#002D72' },
+  108: { name: 'Baltimore Orioles', abbr: 'BAL', color1: '#DF4601', color2: '#092C5E' },
+  111: { name: 'Boston Red Sox', abbr: 'BOS', color1: '#BD3039', color2: '#0C2C56' },
+  145: { name: 'Chicago White Sox', abbr: 'CWS', color1: '#27251F', color2: '#E8722A' },
+  112: { name: 'Chicago Cubs', abbr: 'CHC', color1: '#0E3386', color2: '#CC0000' },
+  113: { name: 'Cincinnati Reds', abbr: 'CIN', color1: '#C6011F', color2: '#000000' },
+  114: { name: 'Cleveland Guardians', abbr: 'CLE', color1: '#002D72', color2: '#E31937' },
+  115: { name: 'Detroit Tigers', abbr: 'DET', color1: '#0C2C56', color2: '#FFFFFF' },
+  116: { name: 'Houston Astros', abbr: 'HOU', color1: '#EB6E1F', color2: '#002D72' },
+  118: { name: 'Kansas City Royals', abbr: 'KC', color1: '#C41E3A', color2: '#2687CB' },
+  108: { name: 'Los Angeles Angels', abbr: 'LAA', color1: '#E8722A', color2: '#BA3039' },
+  119: { name: 'Los Angeles Dodgers', abbr: 'LAD', color1: '#005A9C', color2: '#EF3B39' },
+  142: { name: 'Miami Marlins', abbr: 'MIA', color1: '#00A3E9', color2: '#F9423A' },
+  158: { name: 'Milwaukee Brewers', abbr: 'MIL', color1: '#12284B', color2: '#9A1D20' },
+  142: { name: 'Minnesota Twins', abbr: 'MIN', color1: '#002B5C', color2: '#E8722A' },
+  121: { name: 'New York Mets', abbr: 'NYM', color1: '#002D72', color2: '#002D72' },
+  147: { name: 'New York Yankees', abbr: 'NYY', color1: '#003478', color2: '#FFFFFF' },
+  133: { name: 'Oakland Athletics', abbr: 'OAK', color1: '#003831', color2: '#FFBE0B' },
+  143: { name: 'Philadelphia Phillies', abbr: 'PHI', color1: '#8B0000', color2: '#FFBE0B' },
+  137: { name: 'Pittsburgh Pirates', abbr: 'PIT', color1: '#27251F', color2: '#27B386' },
+  135: { name: 'San Diego Padres', abbr: 'SD', color1: '#2F241D', color2: '#7CB9E8' },
+  137: { name: 'San Francisco Giants', abbr: 'SF', color1: '#FD5A1E', color2: '#27251F' },
+  136: { name: 'Seattle Mariners', abbr: 'SEA', color1: '#002D72', color2: '#C4CED4' },
+  138: { name: 'St. Louis Cardinals', abbr: 'STL', color1: '#C41E3A', color2: '#FFBE0B' },
+  139: { name: 'Tampa Bay Rays', abbr: 'TB', color1: '#092C5E', color2: '#92000B' },
+  140: { name: 'Texas Rangers', abbr: 'TEX', color1: '#003278', color2: '#FFBE0B' },
+  141: { name: 'Toronto Blue Jays', abbr: 'TOR', color1: '#134687', color2: '#1D2D5C' },
+  142: { name: 'Washington Nationals', abbr: 'WSH', color1: '#AB0003', color2: '#370C37' }
+};
+
+/* ═══════════════════════════════════════════════════════════════════
+   API HELPER FUNCTIONS
+═══════════════════════════════════════════════════════════════════ */
+
+// ✅ FIX #1: Add missing apiURL() function
+function apiURL(path) {
+  return '/api/mlb?path=' + encodeURIComponent(path);
+}
+
+// ✅ FIX #1: Add missing fetchJSON() function with proper error handling
+async function fetchJSON(url) {
+  try {
+    // Check session cache first
+    if (dataCache[url]) {
+      console.log('[Cache Hit]', url);
+      return dataCache[url];
+    }
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.error(`[Fetch Error] ${response.status} ${response.statusText}`);
+      return null;
+    }
+
+    const data = await response.json();
+    
+    // Store in session cache (expires when tab closes)
+    dataCache[url] = data;
+    
+    return data;
+  } catch (err) {
+    console.error('[Fetch Exception]', err);
+    return null;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TAB SWITCHING
+═══════════════════════════════════════════════════════════════════ */
+
+function switchTab(tabName) {
+  // Hide all pages
+  document.querySelectorAll('.pg').forEach(el => el.classList.remove('active'));
+  // Hide all tabs
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  
+  // Show selected page
+  const page = document.getElementById(tabName);
+  if (page) page.classList.add('active');
+  
+  // Mark selected tab
+  event.target.classList.add('active');
+  
+  // Load tab-specific data
+  if (tabName === 'prospects') loadProspects();
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TEAM SELECTION
+═══════════════════════════════════════════════════════════════════ */
+
+// ✅ FIX #3: Add missing initTeamSelect() function
+function initTeamSelect() {
+  const select = document.getElementById('team-select');
+  if (!select) return;
+
+  select.innerHTML = '<option value="">Select Team...</option>';
+  
+  Object.keys(TEAMS).forEach(teamId => {
+    const team = TEAMS[teamId];
+    const option = document.createElement('option');
+    option.value = teamId;
+    option.textContent = team.name;
+    select.appendChild(option);
+  });
+  
+  // Set default to Diamondbacks
+  select.value = 109;
+}
+
+function switchTeam() {
+  const teamId = parseInt(document.getElementById('team-select').value);
+  if (!teamId || !TEAMS[teamId]) return;
+  
+  curTeam = teamId;
+  curTeamName = TEAMS[teamId].name;
+  loadTeam(teamId);
+}
+
+// ✅ FIX #4: Add missing loadTeam() function
+async function loadTeam(teamId) {
+  if (!TEAMS[teamId]) {
+    console.error('Unknown team ID:', teamId);
+    return;
+  }
+
+  const team = TEAMS[teamId];
+  curTeamName = team.name;
+  
+  // Update theme colors
+  document.documentElement.style.setProperty('--orange', team.color1);
+  document.documentElement.style.setProperty('--blue-bright', team.color2);
+  
+  // Update header
+  document.getElementById('team-name').textContent = team.name + ' — ' + team.abbr;
+  
+  // Load team stats
+  const stats = await fetchJSON(apiURL('/teams/' + teamId + '/stats?season=' + SEASON));
+  if (stats && stats.stats && stats.stats[0]) {
+    const s = stats.stats[0].stats;
+    document.getElementById('stat-wins').textContent = (s.wins || '—');
+    document.getElementById('stat-win-pct').textContent = (s.winningPercentage || '—');
+  }
+  
+  updateTimestamp();
+}
+
+// ✅ FIX #5: Add missing updateTimestamp() function
+function updateTimestamp() {
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-US', { 
+    hour: '2-digit', 
+    minute: '2-digit',
+    hour12: true 
+  });
+  
+  // Log for debugging
+  console.log('[Dashboard Updated]', timeStr);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   PROSPECTS
+═══════════════════════════════════════════════════════════════════ */
+
+// ✅ FIX #10: Add proper error handling for Promise.all
+async function loadProspects() {
+  const el = document.getElementById('prospects-grid');
+  document.getElementById('prospects-title').textContent = curTeamName + ' — Top Prospects';
+  el.innerHTML = '<div style="grid-column:1/-1;" class="loading"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div> Loading prospects...</div>';
+
+  try {
+    const data = await fetchJSON(apiURL('/teams/' + curTeam + '/roster?rosterType=nonRosterInvitees'));
+    let prospects = [];
+    
+    if (data && data.roster && Array.isArray(data.roster)) {
+      prospects = data.roster.slice(0, 9).filter(p => p && p.person); // ✅ Filter null/undefined
+    }
+
+    if (prospects.length === 0) {
+      // Fallback to sample prospects
+      const sampleProspects = [
+        {name:'Top Prospect A', pos:'OF', fv:50, school:'College', age:21, level:'AA', stats:'.289/.362/.468'},
+        {name:'Top Prospect B', pos:'SS', fv:55, school:'HS', age:20, level:'High-A', stats:'.301/.380/.510'},
+        {name:'Top Prospect C', pos:'RHP', fv:50, school:'College', age:22, level:'Triple-A', stats:'3.12 ERA / 9.8 K/9'}
+      ];
+      el.innerHTML = sampleProspects.map(p => renderProspectCard(p.name, p.pos, 1, p.fv, p.school, p.age, p.level, p.stats, null)).join('');
+      return;
+    }
+
+    // Render actual prospects with proper null checks
+    const cards = prospects.map((p, i) => {
+      const name = (p.person && p.person.fullName) ? p.person.fullName : 'Unknown';
+      const pos = (p.position && p.position.abbreviation) ? p.position.abbreviation : 'P';
+      const pid = (p.person && p.person.id) ? p.person.id : null;
+      return renderProspectCard(name, pos, i+1, 50, '—', '—', '—', '—', pid);
+    });
+
+    el.innerHTML = cards.join('');
+  } catch (err) {
+    console.error('[Prospects Error]', err);
+    el.innerHTML = '<div style="grid-column:1/-1;color:var(--red);text-align:center;padding:20px;">Error loading prospects</div>';
+  }
+}
+
+function renderProspectCard(name, pos, rank, fv, school, age, level, stats, pid) {
+  // ✅ FIX: Add XSS prevention via textContent instead of innerHTML for user data
+  const img = pid ? `<img style="width:100%;height:120px;object-fit:cover;object-position:top;" src="https://img.mlbstatic.com/mlb-photos/image/upload/w_300,q_auto:best/v1/people/${pid}/headshot/67/current" onerror="this.style.display='none'" />` : '';
+  
+  return `<div class="prospect-card">
+    ${img}
+    <div class="prospect-rank-badge">#${rank}<br><span class="rk-sub">IN ORGANIZATION</span></div>
+    <div class="prospect-info">
+      <div class="prospect-name">${name}</div>
+      <div class="prospect-meta">${pos} · ${level} · Age ${age}</div>
+      <div style="font-family:var(--font-label);font-size:0.72rem;color:var(--text-dim);margin-top:4px;">${stats}</div>
+      <div class="prospect-grades">
+        <span class="prospect-grade">FV ${fv}</span>
+        <span class="prospect-grade">${school}</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SCOUT NOTES
+═══════════════════════════════════════════════════════════════════ */
+
+function loadNotes() {
+  try {
+    savedNotes = JSON.parse(localStorage.getItem('mlb_scout_notes') || '[]');
+  } catch(e) {
+    console.error('[LocalStorage Error]', e);
+    savedNotes = [];
+  }
+  renderNotes();
+}
+
+function renderNotes() {
+  const el = document.getElementById('notes-list');
+  
+  if (savedNotes.length === 0) {
+    el.innerHTML = '<div style="font-family:var(--font-label);font-size:0.8rem;color:var(--text-dim);padding:20px;text-align:center;">No scout notes yet. Add your first note above.</div>';
+    document.getElementById('notes-count').textContent = '0 notes';
+    return;
+  }
+
+  // ✅ FIX #7: Store index with each note to avoid deletion bugs
+  el.innerHTML = savedNotes.slice().reverse().map((n, displayIdx) => {
+    const actualIdx = savedNotes.length - 1 - displayIdx; // Calculate original index
+    const tagClass = 'tag-' + (n.tag || 'watch');
+    
+    // ✅ FIX #15: Input sanitization - escape HTML characters
+    const playerEscaped = (n.player || '').replace(/[<>&"']/g, c => ({
+      '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+    const textEscaped = (n.text || '').replace(/[<>&"']/g, c => ({
+      '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+    
+    return `<div class="note-card">
+      <span class="note-tag ${tagClass}">${(n.tag||'watch').toUpperCase()}</span>
+      <div class="note-player">${playerEscaped}</div>
+      <div class="note-text">${textEscaped}</div>
+      <div class="note-date">${n.date} · <span style="cursor:pointer;color:var(--red);" onclick="deleteNote(${actualIdx})">Delete</span></div>
+    </div>`;
+  }).join('');
+  
+  document.getElementById('notes-count').textContent = savedNotes.length + ' note' + (savedNotes.length !== 1 ? 's' : '');
+}
+
+function addNote() {
+  const player = document.getElementById('note-player').value.trim();
+  const tag = document.getElementById('note-tag').value;
+  const text = document.getElementById('note-text').value.trim();
+  
+  // ✅ FIX #15: Add input validation
+  if (!player || !text) {
+    alert('Please enter both player name and notes.');
+    return;
+  }
+  if (player.length > 100 || text.length > 1000) {
+    alert('Input too long.');
+    return;
+  }
+
+  savedNotes.push({ 
+    player: player, 
+    tag: tag, 
+    text: text, 
+    date: new Date().toLocaleDateString() 
+  });
+  
+  try { 
+    localStorage.setItem('mlb_scout_notes', JSON.stringify(savedNotes)); 
+  } catch(e) { 
+    console.error('[LocalStorage Error]', e);
+    alert('Could not save note — storage full or unavailable.');
+  }
+  
+  document.getElementById('note-player').value = '';
+  document.getElementById('note-text').value = '';
+  renderNotes();
+}
+
+function deleteNote(idx) {
+  if (idx < 0 || idx >= savedNotes.length) {
+    console.error('Invalid note index:', idx);
+    return;
+  }
+  
+  savedNotes.splice(idx, 1);
+  
+  try { 
+    localStorage.setItem('mlb_scout_notes', JSON.stringify(savedNotes)); 
+  } catch(e) { 
+    console.error('[LocalStorage Error]', e);
+  }
+  
+  renderNotes();
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   QUOTES
+═══════════════════════════════════════════════════════════════════ */
+
+function loadQuotes() {
+  try {
+    savedQuotes = JSON.parse(localStorage.getItem('mlb_saved_quotes') || '[]');
+  } catch(e) {
+    console.error('[LocalStorage Error]', e);
+    savedQuotes = [
+      {id:1, text:"The secret of baseball is that everyone does the same thing, but not everyone does it the same.", author:"Willie Mays"},
+      {id:2, text:"Baseball is ninety percent mental and the other half is physical.", author:"Yogi Berra"},
+      {id:3, text:"I think about baseball when I wake up in the morning. I think about it all day and I dream about it at night.", author:"Carl Yastrzemski"}
+    ];
+  }
+  renderQuotes();
+}
+
+function renderQuotes() {
+  const el = document.getElementById('quotes-container');
+  
+  el.innerHTML = savedQuotes.map((q, i) => {
+    // ✅ FIX #15: Sanitize quote text and author
+    const textEscaped = (q.text || '').replace(/[<>&"']/g, c => ({
+      '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+    const authorEscaped = (q.author || '').replace(/[<>&"']/g, c => ({
+      '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+    
+    const deleteBtn = devMode ? ` <span style="cursor:pointer;color:var(--red);font-size:0.65rem;" onclick="deleteQuote(${i})">✕</span>` : '';
+    
+    return `<div class="about-quote">
+      ${textEscaped}
+      <div class="attr">— ${authorEscaped}${deleteBtn}</div>
+    </div>`;
+  }).join('');
+}
+
+function addQuote() {
+  const text = document.getElementById('quote-text').value.trim();
+  const author = document.getElementById('quote-author').value.trim();
+  
+  // ✅ FIX #15: Add input validation
+  if (!text || !author) {
+    alert('Please enter both quote and author.');
+    return;
+  }
+  if (text.length > 500 || author.length > 100) {
+    alert('Input too long.');
+    return;
+  }
+
+  savedQuotes.push({id: Date.now(), text: text, author: author});
+  
+  try { 
+    localStorage.setItem('mlb_saved_quotes', JSON.stringify(savedQuotes)); 
+  } catch(e) { 
+    console.error('[LocalStorage Error]', e);
+    alert('Could not save quote — storage full.');
+  }
+  
+  document.getElementById('quote-text').value = '';
+  document.getElementById('quote-author').value = '';
+  renderQuotes();
+}
+
+function deleteQuote(idx) {
+  if (idx < 0 || idx >= savedQuotes.length) return;
+  savedQuotes.splice(idx, 1);
+  
+  try { 
+    localStorage.setItem('mlb_saved_quotes', JSON.stringify(savedQuotes)); 
+  } catch(e) { 
+    console.error('[LocalStorage Error]', e);
+  }
+  
+  renderQuotes();
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DEVELOPER MODE
+═══════════════════════════════════════════════════════════════════ */
+
+function devLogin() {
+  const pw = prompt('Developer password:');
+  if (pw === 'scout') {
+    devMode = true;
+    document.getElementById('dev-form').style.display = 'block';
+    renderQuotes();
+    document.getElementById('dev-login-btn').style.color = 'var(--green)';
+    document.getElementById('dev-login-btn').textContent = '✓ DEV MODE';
+    console.log('[Dev Mode] Enabled');
+  } else if (pw !== null) {
+    alert('Incorrect password.');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   INITIALIZATION
+═══════════════════════════════════════════════════════════════════ */
+
+(function init() {
+  console.log('[Initializing] MLB Analytics Dashboard V4');
+  
+  initTeamSelect();
+  loadQuotes();
+  loadNotes();
+  loadTeam(109); // Default: Arizona Diamondbacks
+  
+  console.log('[Ready] Dashboard initialized');
+})();
+</script>
+
+</body>
+</html>

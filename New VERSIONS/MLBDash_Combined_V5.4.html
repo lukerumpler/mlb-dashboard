@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MLB Intelligence Terminal | V5.4 Draft Room</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* 
+  MLB INTELLIGENCE TERMINAL - V5.4 STYLESHEET
+  Theme: The Draft Room (Prospect & Strategic Intelligence)
+*/
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy: #07102D;
+  --navy-mid: #0d1c3a;
+  --navy-light: #0f2040;
+  --navy-border: #1e3055;
+  --text-dim: #a0b4cc;
+  --white: #FFFFFF;
+  --orange: #E8722A;
+  --orange-dim: rgba(232, 114, 42, 0.15);
+  --blue-bright: #5AB4F5;
+  --red-elite: #C0392B;
+  --green-pos: #4DCE8A;
+  --gold-val: #F5C842;
+  --blue-poor: #2471A3;
+  --gray-neu: #7F8C8D;
+  --green: #4DCE8A;
+  --gold: #F5C842;
+  --red: #C0392B;
+}
+
+body {
+  font-family: 'Barlow', sans-serif;
+  background: var(--navy);
+  color: var(--white);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+  padding-bottom: 80px;
+}
+
+/* Draft Board Styles */
+.draft-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
+}
+.draft-card {
+  background: var(--navy-mid);
+  border: 1px solid var(--navy-border);
+  border-radius: 10px;
+  padding: 15px;
+  position: relative;
+  overflow: hidden;
+}
+.draft-rank {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: var(--orange);
+  color: #fff;
+  padding: 5px 10px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  border-bottom-left-radius: 10px;
+}
+.fv-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: var(--gold-val);
+  color: #000;
+  border-radius: 4px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+/* RE24 Matrix Styles */
+.re-matrix {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+}
+.re-matrix th, .re-matrix td {
+  border: 1px solid var(--navy-border);
+  padding: 8px;
+  text-align: center;
+}
+.re-matrix th { background: var(--navy-light); color: var(--text-dim); }
+.re-val-high { color: var(--green-pos); font-weight: 700; }
+
+/* Mobile Responsive Adjustments */
+@media (max-width: 768px) {
+  .grid-2, .grid-3 { grid-template-columns: 1fr !important; }
+  .hdr-inner { flex-direction: column; gap: 10px; }
+  .search-box { width: 100% !important; }
+  .dash-title { font-size: 24px !important; }
+}
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--navy); }
+::-webkit-scrollbar-thumb { background: var(--orange); border-radius: 4px; }
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Live Scoreboard */
+.scoreboard {
+  background: #000;
+  color: #fff;
+  padding: 5px 0;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  border-bottom: 1px solid var(--orange);
+  overflow: hidden;
+  white-space: nowrap;
+}
+.score-track {
+  display: inline-block;
+  animation: ticker 40s linear infinite;
+}
+.score-item {
+  display: inline-block;
+  padding: 0 20px;
+  border-right: 1px solid #333;
+}
+.score-val { color: var(--orange); margin-left: 5px; }
+
+.hdr {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(3, 8, 20, 0.92);
+  border-bottom: 2px solid var(--orange);
+  backdrop-filter: blur(16px);
+  padding: 10px 20px;
+}
+
+.hdr-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1800px;
+  margin: 0 auto;
+}
+
+.logo-block .season-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--orange);
+}
+
+.logo-block .dash-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 30px;
+  letter-spacing: 3px;
+  background: linear-gradient(135deg, #fff 40%, var(--orange));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Global Search */
+.search-box {
+  background: var(--navy-mid);
+  border: 1px solid var(--navy-border);
+  border-radius: 20px;
+  padding: 5px 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 300px;
+}
+.search-box input {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  width: 100%;
+  outline: none;
+}
+
+select.tpick {
+  background: var(--navy-mid);
+  border: 1px solid var(--orange);
+  border-radius: 8px;
+  color: #fff;
+  padding: 7px 12px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tabs-wrap {
+  background: rgba(3, 8, 20, 0.7);
+  border-bottom: 1px solid var(--navy-border);
+  position: relative;
+  z-index: 1;
+}
+
+.tabs {
+  display: flex;
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 0 20px;
+  overflow-x: auto;
+}
+
+.tab {
+  padding: 14px 20px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+}
+
+.tab.on {
+  color: var(--orange);
+  border-bottom-color: var(--orange);
+}
+
+.body {
+  padding: 20px;
+  max-width: 1800px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.pg { display: none; }
+.pg.on { display: block; }
+
+.panel {
+  background: rgba(7, 16, 45, 0.88);
+  border: 1px solid var(--navy-border);
+  border-radius: 18px;
+  padding: 20px;
+  margin-bottom: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.panel-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 24px;
+  letter-spacing: 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+  color: var(--orange);
+  display: flex;
+  justify-content: space-between;
+}
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tbl th {
+  text-align: left;
+  padding: 8px;
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--navy-border);
+  font-family: 'Barlow Condensed', sans-serif;
+}
+.tbl td { padding: 10px 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.04); }
+
+/* Terminal Command Bar */
+.command-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: #000;
+  border-top: 2px solid var(--orange);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  z-index: 2000;
+}
+.cmd-prompt { font-family: 'Bebas Neue', sans-serif; color: var(--orange); font-size: 18px; }
+.cmd-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px;
+  outline: none;
+}
+
+.loading { padding: 40px; text-align: center; color: var(--text-dim); font-style: italic; }
+</style>
+</head>
+<body>
+
+<div class="scoreboard">
+  <div class="score-track" id="score-track">
+    <div class="score-item">NYY <span class="score-val">4</span> @ BOS <span class="score-val">2</span> (FINAL)</div>
+    <div class="score-item">LAD <span class="score-val">7</span> @ SF <span class="score-val">3</span> (FINAL)</div>
+    <div class="score-item">ARI <span class="score-val">5</span> @ SD <span class="score-val">5</span> (9TH)</div>
+    <div class="score-item">ATL <span class="score-val">1</span> @ PHI <span class="score-val">0</span> (3RD)</div>
+    <div class="score-item">HOU <span class="score-val">2</span> @ TEX <span class="score-val">6</span> (FINAL)</div>
+    <div class="score-item">CHC <span class="score-val">3</span> @ STL <span class="score-val">4</span> (FINAL)</div>
+  </div>
+</div>
+
+<div class="hdr">
+  <div class="hdr-inner">
+    <div class="logo-block">
+      <div class="season-label">2026 SEASON</div>
+      <div class="dash-title">MLB INTELLIGENCE TERMINAL</div>
+    </div>
+    <div class="search-box">
+      <span>🔍</span>
+      <input type="text" id="global-search" placeholder="Search Players or Teams..." onkeyup="handleSearch(event)">
+    </div>
+    <select class="tpick" id="tsel" onchange="loadTeam(this.value)"></select>
+  </div>
+</div>
+
+<div class="tabs-wrap">
+  <div class="tabs" id="tabs">
+    <div class="tab on" data-tab="dash">Dashboard</div>
+    <div class="tab" data-tab="gm">GM Mode</div>
+    <div class="tab" data-tab="draft">Draft Room</div>
+    <div class="tab" data-tab="re">Run Expectancy</div>
+    <div class="tab" data-tab="scouting">Scouting</div>
+    <div class="tab" data-tab="adv">Advanced</div>
+    <div class="tab" data-tab="league">League Overview</div>
+    <div class="tab" data-tab="personnel">Personnel</div>
+    <div class="tab" data-tab="profile">Player Profile</div>
+    <div class="tab" data-tab="prospects">Prospects</div>
+    <div class="tab" data-tab="notes">Scout Notes</div>
+    <div class="tab" data-tab="about">About Me</div>
+  </div>
+</div>
+
+<div class="body">
+  <!-- DASHBOARD -->
+  <div class="pg on" id="pg-dash">
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-title">DIVISION STANDINGS</div>
+        <div id="hs-stand"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">UPCOMING SCHEDULE</div>
+        <div id="team-schedule"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GM MODE -->
+  <div class="pg" id="pg-gm">
+    <div class="panel">
+      <div class="panel-title">TRADE EVALUATOR <span class="pt-badge">BETA</span></div>
+      <div style="display:grid; grid-template-columns: 1fr auto 1fr; gap:20px; align-items:center">
+        <div style="background:var(--navy-mid); padding:15px; border-radius:10px; text-align:center">
+          <div style="font-size:10px; color:var(--text-dim)">GIVING UP</div>
+          <div style="font-family:Bebas Neue; font-size:24px">PLAYER A</div>
+          <div style="color:var(--red); font-weight:700">-2.4 WAR</div>
+        </div>
+        <div style="font-size:30px">↔</div>
+        <div style="background:var(--navy-mid); padding:15px; border-radius:10px; text-align:center">
+          <div style="font-size:10px; color:var(--text-dim)">RECEIVING</div>
+          <div style="font-family:Bebas Neue; font-size:24px">PLAYER B</div>
+          <div style="color:var(--green); font-weight:700">+3.1 WAR</div>
+        </div>
+      </div>
+      <div style="margin-top:15px; text-align:center; color:var(--green); font-weight:700">TRADE VALUE DELTA: +0.7 WAR (RECOMMENDED)</div>
+    </div>
+  </div>
+
+  <!-- DRAFT ROOM -->
+  <div class="pg" id="pg-draft">
+    <div class="panel">
+      <div class="panel-title">2026 MOCK DRAFT BOARD</div>
+      <div class="draft-board" id="draft-board">
+        <div class="draft-card">
+          <div class="draft-rank">#1</div>
+          <div style="font-family:Bebas Neue; font-size:20px">JACKSON HOLLIDAY</div>
+          <div style="font-size:12px; color:var(--text-dim)">SS | BALTIMORE</div>
+          <div class="fv-badge">FV: 70</div>
+        </div>
+        <div class="draft-card">
+          <div class="draft-rank">#2</div>
+          <div style="font-family:Bebas Neue; font-size:20px">PAUL SKENES</div>
+          <div style="font-size:12px; color:var(--text-dim)">RHP | PITTSBURGH</div>
+          <div class="fv-badge">FV: 65</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RUN EXPECTANCY -->
+  <div class="pg" id="pg-re">
+    <div class="panel">
+      <div class="panel-title">RE24 RUN EXPECTANCY MATRIX</div>
+      <table class="re-matrix">
+        <thead>
+          <tr>
+            <th>Base State</th>
+            <th>0 Outs</th>
+            <th>1 Out</th>
+            <th>2 Outs</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Empty</td><td>0.48</td><td>0.25</td><td>0.10</td></tr>
+          <tr><td>1st</td><td>0.86</td><td>0.51</td><td>0.22</td></tr>
+          <tr><td>1st & 2nd</td><td>1.44</td><td>0.91</td><td>0.43</td></tr>
+          <tr><td>Bases Loaded</td><td class="re-val-high">2.28</td><td>1.54</td><td>0.75</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SCOUTING -->
+  <div class="pg" id="pg-scouting">
+    <div class="panel">
+      <div class="panel-title">TEAM SCOUTING REPORT</div>
+      <div id="scout-strengths"></div>
+    </div>
+  </div>
+
+  <!-- ADVANCED -->
+  <div class="pg" id="pg-adv">
+    <div class="panel">
+      <div class="panel-title">OFFENSIVE STATCAST</div>
+      <div id="adv-barrel"></div>
+    </div>
+  </div>
+
+  <!-- LEAGUE OVERVIEW -->
+  <div class="pg" id="pg-league">
+    <div class="panel">
+      <div class="panel-title">MLB LEAGUE LEADERS</div>
+      <div id="league-leaders"></div>
+    </div>
+  </div>
+
+  <!-- PERSONNEL -->
+  <div class="pg" id="pg-personnel">
+    <div class="panel">
+      <div class="panel-title">ACTIVE ROSTER</div>
+      <div id="active-roster"></div>
+    </div>
+  </div>
+
+  <!-- PLAYER PROFILE -->
+  <div class="pg" id="pg-profile">
+    <div class="panel">
+      <div class="panel-title">PLAYER PROFILE</div>
+      <select id="prof-player-sel" class="tpick" onchange="loadPlayerProfile()" style="margin-bottom: 20px;"></select>
+      <div id="prof-content"></div>
+    </div>
+  </div>
+
+  <!-- PROSPECTS -->
+  <div class="pg" id="pg-prospects">
+    <div class="panel">
+      <div class="panel-title">TOP PROSPECTS</div>
+      <div id="prospects-list"></div>
+    </div>
+  </div>
+
+  <!-- SCOUT NOTES -->
+  <div class="pg" id="pg-notes">
+    <div class="panel">
+      <div class="panel-title">ADD SCOUT NOTE</div>
+      <div id="notes-container"></div>
+    </div>
+  </div>
+
+  <!-- ABOUT ME -->
+  <div class="pg" id="pg-about">
+    <div class="panel">
+      <div class="panel-title">PRO PORTFOLIO</div>
+    </div>
+  </div>
+</div>
+
+<div class="command-bar">
+  <div class="cmd-prompt">TERMINAL ></div>
+  <input type="text" class="cmd-input" id="cmd-input" placeholder="Type command (e.g. 'T NYY' for Yankees, 'HELP' for list)..." onkeyup="handleCommand(event)">
+</div>
+
+<script>
+var SEASON = 2026;
+var curTeam = 109;
+var MLB_API = 'https://statsapi.mlb.com/api/v1';
+var TEAMS = [
+  {id:109,name:"Arizona Diamondbacks",abbr:"ARI",primary:"#A71930",secondary:"#E3D4AD"},
+  {id:144,name:"Atlanta Braves",abbr:"ATL",primary:"#CE1141",secondary:"#13274F"},
+  {id:110,name:"Baltimore Orioles",abbr:"BAL",primary:"#DF4601",secondary:"#000000"},
+  {id:111,name:"Boston Red Sox",abbr:"BOS",primary:"#BD3039",secondary:"#0C2340"},
+  {id:112,name:"Chicago Cubs",abbr:"CHC",primary:"#0E3386",secondary:"#CC3433"},
+  {id:145,name:"Chicago White Sox",abbr:"CWS",primary:"#27251F",secondary:"#C4CED4"},
+  {id:113,name:"Cincinnati Reds",abbr:"CIN",primary:"#C6011F",secondary:"#000000"},
+  {id:114,name:"Cleveland Guardians",abbr:"CLE",primary:"#0C2340",secondary:"#E31937"},
+  {id:115,name:"Colorado Rockies",abbr:"COL",primary:"#333366",secondary:"#C4CED4"},
+  {id:116,name:"Detroit Tigers",abbr:"DET",primary:"#0C2340",secondary:"#FA4616"},
+  {id:117,name:"Houston Astros",abbr:"HOU",primary:"#002D62",secondary:"#EB6E1F"},
+  {id:118,name:"Kansas City Royals",abbr:"KC",primary:"#004687",secondary:"#BD9B60"},
+  {id:108,name:"Los Angeles Angels",abbr:"LAA",primary:"#BA0021",secondary:"#003263"},
+  {id:119,name:"Los Angeles Dodgers",abbr:"LAD",primary:"#005A9C",secondary:"#EF3E42"},
+  {id:146,name:"Miami Marlins",abbr:"MIA",primary:"#00A3E0",secondary:"#EF3340"},
+  {id:158,name:"Milwaukee Brewers",abbr:"MIL",primary:"#FFC52F",secondary:"#12284B"},
+  {id:142,name:"Minnesota Twins",abbr:"MIN",primary:"#002B5C",secondary:"#D31145"},
+  {id:121,name:"New York Mets",abbr:"NYM",primary:"#002D72",secondary:"#FF5910"},
+  {id:147,name:"New York Yankees",abbr:"NYY",primary:"#003087",secondary:"#E4002C"},
+  {id:133,name:"Athletics",abbr:"ATH",primary:"#003831",secondary:"#EFB21E"},
+  {id:143,name:"Philadelphia Phillies",abbr:"PHI",primary:"#E81828",secondary:"#002D72"},
+  {id:134,name:"Pittsburgh Pirates",abbr:"PIT",primary:"#27251F",secondary:"#FDB827"},
+  {id:135,name:"San Diego Padres",abbr:"SD",primary:"#2F241D",secondary:"#FFC72C"},
+  {id:137,name:"San Francisco Giants",abbr:"SF",primary:"#FD5A1E",secondary:"#27251F"},
+  {id:136,name:"Seattle Mariners",abbr:"SEA",primary:"#0C2C56",secondary:"#005C5C"},
+  {id:138,name:"St. Louis Cardinals",abbr:"STL",primary:"#C41E3A",secondary:"#0C2340"},
+  {id:139,name:"Tampa Bay Rays",abbr:"TB",primary:"#092C5C",secondary:"#8FBCE6"},
+  {id:140,name:"Texas Rangers",abbr:"TEX",primary:"#003278",secondary:"#C0111F"},
+  {id:141,name:"Toronto Blue Jays",abbr:"TOR",primary:"#134A8E",secondary:"#1D2D5C"},
+  {id:120,name:"Washington Nationals",abbr:"WSH",primary:"#AB0003",secondary:"#14225A"}
+];
+
+function sh(id, h) { var e = document.getElementById(id); if (e) e.innerHTML = h; }
+function updateThemeColors(teamId) {
+  var team = TEAMS.find(function(t) { return t.id == teamId; });
+  if (!team) return;
+  document.documentElement.style.setProperty('--orange', team.primary);
+  document.documentElement.style.setProperty('--orange-dim', team.primary + '26');
+  document.documentElement.style.setProperty('--blue-bright', team.secondary);
+}
+
+document.getElementById('tabs').addEventListener('click', function(e) {
+  var tab = e.target.closest('.tab');
+  if (!tab) return;
+  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('on'); });
+  document.querySelectorAll('.pg').forEach(function(p) { p.classList.remove('on'); });
+  tab.classList.add('on');
+  document.getElementById('pg-' + tab.dataset.tab).classList.add('on');
+});
+
+function loadTeam(teamId) {
+  curTeam = teamId;
+  updateThemeColors(teamId);
+}
+
+function handleCommand(e) {
+  if (e.key === 'Enter') {
+    var cmd = e.target.value.toUpperCase().split(' ');
+    if (cmd[0] === 'T') {
+      var team = TEAMS.find(function(t) { return t.abbr === cmd[1]; });
+      if (team) { loadTeam(team.id); document.getElementById('tsel').value = team.id; }
+    }
+    e.target.value = '';
+  }
+}
+
+(function() {
+  loadTeam(109);
+})();
+</script>
+</body>
+</html>

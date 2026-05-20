@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MLB Intelligence Terminal | v2.0</title>
+    <style>
+        :root {
+            --bg: #020617;
+            --card: rgba(30, 41, 59, 0.5);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #f8fafc;
+            --muted: #94a3b8;
+            --accent: #38bdf8;
+            --red: #ef4444;
+            --orange: #f97316;
+            --gray: #64748b;
+            --blue: #3b82f6;
+            --glass: rgba(15, 23, 42, 0.8);
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            background: var(--bg);
+            color: var(--text);
+            background-image: radial-gradient(circle at 50% 50%, #1e293b 0%, #020617 100%);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1440px;
+            margin: auto;
+            padding: 24px;
+        }
+
+        /* HEADER & SEARCH */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+        }
+
+        .terminal-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            color: var(--accent);
+        }
+
+        .search-container {
+            position: relative;
+            display: flex;
+            gap: 8px;
+        }
+
+        input {
+            width: 320px;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: white;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+        }
+
+        button {
+            padding: 12px 24px;
+            background: var(--accent);
+            color: var(--bg);
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover { opacity: 0.9; }
+
+        /* LAYOUT */
+        .profile-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr 340px;
+            gap: 20px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.4s ease-out;
+        }
+
+        .profile-layout.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* PANELS */
+        .panel {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .panel-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--muted);
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .demo-badge {
+            font-size: 9px;
+            background: rgba(249, 115, 22, 0.2);
+            color: var(--orange);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        /* KPI */
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .kpi-box {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .kpi-label { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+        .kpi-val { font-size: 24px; font-weight: 800; color: var(--accent); }
+
+        /* PERCENTILES */
+        .pct-group { margin-bottom: 20px; }
+        .pct-group-title { font-size: 11px; font-weight: bold; margin-bottom: 8px; color: var(--muted); }
+        
+        .pct-row {
+            display: grid;
+            grid-template-columns: 100px 1fr 45px;
+            gap: 12px;
+            margin-bottom: 8px;
+            align-items: center;
+        }
+
+        .pct-label { font-size: 11px; }
+        .pct-track {
+            position: relative;
+            height: 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+            overflow: visible;
+        }
+
+        .pct-fill { height: 100%; border-radius: 4px; transition: width 1s ease-in-out; }
+        .pct-bubble {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            font-size: 9px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            transition: left 1s ease-in-out;
+        }
+        .pct-raw { font-size: 11px; text-align: right; color: var(--muted); }
+
+        /* TABLES */
+        .scout-table {
+            width: 100%;
+            font-size: 11px;
+            border-collapse: collapse;
+        }
+
+        .scout-table th { text-align: left; color: var(--muted); font-weight: normal; padding: 6px; border-bottom: 1px solid var(--border); }
+        .scout-table td { padding: 6px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+
+        /* JARVIS */
+        .jarvis-score { font-size: 48px; font-weight: 900; line-height: 1; margin: 10px 0; color: var(--accent); }
+        .jarvis-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+        .meta-item { font-size: 11px; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; }
+        .meta-label { color: var(--muted); margin-right: 4px; }
+        
+        .jarvis-section { margin-bottom: 12px; }
+        .section-h { font-size: 10px; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
+        .section-body { font-size: 12px; }
+
+        /* COMPS */
+        .comp-item {
+            padding: 8px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.03);
+            margin-bottom: 8px;
+            border-left: 2px solid var(--accent);
+        }
+        .comp-header { display: flex; justify-content: space-between; font-size: 12px; font-weight: bold; margin-bottom: 4px; }
+        .comp-reason { font-size: 10px; color: var(--muted); font-style: italic; }
+
+        /* LOADING STATES */
+        #loader {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 100;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(56, 189, 248, 0.1);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ZONE GRID */
+        .zone-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            width: 180px;
+            margin: auto;
+        }
+        .zone-cell {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            border-radius: 2px;
+        }
+        .zone-red { background: rgba(239, 68, 68, 0.6); }
+        .zone-orange { background: rgba(249, 115, 22, 0.6); }
+        .zone-gray { background: rgba(100, 116, 139, 0.6); }
+        .zone-blue { background: rgba(59, 130, 246, 0.6); }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="terminal-title">MLB INTELLIGENCE TERMINAL <span style="opacity:0.5; font-weight:300;">v2.0.4</span></div>
+        <div class="search-container">
+            <input id="playerInput" placeholder="Search Player (e.g. Juan Soto)..." list="playerList">
+            <datalist id="playerList"></datalist>
+            <button onclick="App.handleSearch()">EXECUTE</button>
+        </div>
+    </header>
+
+    <div id="loader">
+        <div class="spinner"></div>
+        <div id="loaderText">INITIALIZING NEURAL LINK...</div>
+    </div>
+
+    <div id="profile" class="profile-layout">
+        <!-- Sidebar: Bio & Percentiles -->
+        <aside class="panel-stack">
+            <div class="panel" style="margin-bottom:20px;">
+                <div class="panel-title">IDENTITY</div>
+                <h1 id="playerName" style="margin:0; font-size:20px;">—</h1>
+                <div id="playerMeta" style="font-size:12px; color:var(--muted);">STANDING BY...</div>
+            </div>
+            
+            <div class="panel">
+                <div class="panel-title">STATCAST PERCENTILES</div>
+                <div id="percentileGroups"></div>
+            </div>
+        </aside>
+
+        <!-- Main Content: KPIs, Insights, Scouting -->
+        <main>
+            <div id="kpis"></div>
+            
+            <div class="panel" style="margin-bottom:20px;">
+                <div class="panel-title">INTELLIGENCE FEED</div>
+                <div id="insights"></div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                <div class="panel">
+                    <div class="panel-title">SPLITS <span class="demo-badge">DEMO</span></div>
+                    <div id="splits"></div>
+                </div>
+                <div class="panel">
+                    <div class="panel-title">ARSENAL <span class="demo-badge">DEMO</span></div>
+                    <div id="arsenal"></div>
+                </div>
+            </div>
+
+            <div class="panel" style="margin-top:20px;">
+                <div class="panel-title">ZONE DAMAGE <span class="demo-badge">DEMO</span></div>
+                <div id="zone"></div>
+            </div>
+        </main>
+
+        <!-- Right Sidebar: JARVIS & COMPS -->
+        <aside class="panel-stack">
+            <div class="panel" style="margin-bottom:20px; border: 1px solid rgba(56, 189, 248, 0.3);">
+                <div class="panel-title" style="color:var(--accent);">JARVIS ENGINE</div>
+                <div id="jarvis"></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">COMPS+</div>
+                <div id="comps"></div>
+            </div>
+        </aside>
+    </div>
+</div>
+
+<template id="pct-row-tpl">
+    <div class="pct-row">
+        <div class="pct-label"></div>
+        <div class="pct-track">
+            <div class="pct-fill"></div>
+            <div class="pct-bubble"></div>
+        </div>
+        <div class="pct-raw"></div>
+    </div>
+</template>
+
+<script>
+/**
+ * MLB INTELLIGENCE TERMINAL - CORE ENGINE
+ * Refactored for modularity, performance, and compliance.
+ */
+
+// --- CONFIGURATION & METRICS ---
+const CONFIG = {
+    YEAR: 2026,
+    METRICS: {
+        XWOBA: { label: "xwOBA", col: "xwoba", higher: true },
+        XSLG: { label: "xSLG", col: "xslg", higher: true },
+        HARDHIT: { label: "HardHit%", col: "hard_hit_percent", higher: true },
+        BARREL: { label: "Barrel%", col: "brl_percent", higher: true },
+        BB: { label: "BB%", col: "bb_percent", higher: true },
+        K: { label: "K%", col: "k_percent", higher: false },
+        CHASE: { label: "Chase%", col: "chase_percent", higher: false },
+        EV: { label: "Avg EV", col: "avg_hit_speed", higher: true }
+    },
+    GROUPS: [
+        { title: "VALUE", items: ["TPVI", "CAS"] },
+        { title: "BATTING", items: ["XWOBA", "XSLG", "BARREL", "HARDHIT", "EV"] },
+        { title: "DISCIPLINE", items: ["BB", "K", "CHASE"] }
+    ]
+};
+
+// --- ANALYTICS ENGINE ---
+const Analytics = {
+    // KPI Calculations
+    CAS: (p) => Math.round(0.5 * p.XWOBA + 0.3 * p.HARDHIT + 0.2 * p.BARREL),
+    DQS: (p) => Math.round(0.5 * p.BB + 0.3 * (100 - p.K) + 0.2 * (100 - p.CHASE)),
+    DPI: (p) => Math.round(0.6 * p.XSLG + 0.25 * p.BARREL + 0.15 * p.EV),
+    TPVI: (p) => Math.round((Analytics.CAS(p) + Analytics.DQS(p) + Analytics.DPI(p)) / 3),
+
+    calculatePercentile: (arr, val, higherBetter) => {
+        if (val == null || arr.length < 10) return 50;
+        const sorted = [...arr].sort((a, b) => a - b);
+        let idx = sorted.findIndex(x => x >= val);
+        if (idx === -1) idx = sorted.length - 1;
+        let p = Math.round((idx / sorted.length) * 100);
+        return higherBetter ? p : 100 - p;
+    },
+
+    getSimilarity: (a, b) => {
+        const keys = Object.keys(CONFIG.METRICS);
+        let diff = 0, count = 0;
+        keys.forEach(k => {
+            if (a[k] != null && b[k] != null) {
+                diff += Math.abs(a[k].pct - b[k].pct);
+                count++;
+            }
+        });
+        return count === 0 ? 0 : Math.round(100 - (diff / count));
+    },
+
+    explainSimilarity: (a, b) => {
+        const keys = Object.keys(CONFIG.METRICS);
+        let reasons = [];
+        keys.forEach(k => {
+            let pa = a[k]?.pct, pb = b[k]?.pct;
+            if (pa == null || pb == null) return;
+            if (Math.abs(pa - pb) <= 12) {
+                if (pa >= 80) reasons.push(`Elite ${CONFIG.METRICS[k].label}`);
+                else if (pa <= 25) reasons.push(`Low ${CONFIG.METRICS[k].label}`);
+                else reasons.push(`Similar ${CONFIG.METRICS[k].label}`);
+            }
+        });
+        return reasons.slice(0, 3).join(", ");
+    },
+
+    getJarvisModel: (p) => {
+        const kpis = {
+            CAS: Analytics.CAS(p),
+            DQS: Analytics.DQS(p),
+            DPI: Analytics.DPI(p),
+            TPVI: Analytics.TPVI(p)
+        };
+        const score = Math.round(0.35 * kpis.TPVI + 0.25 * kpis.CAS + 0.20 * kpis.DPI + 0.20 * kpis.DQS);
+        
+        // Archetype Logic
+        let archetype = "Balanced Contributor";
+        if (kpis.DPI > 85 && kpis.DQS < 40) archetype = "Pure Power Threat";
+        if (kpis.DQS > 85 && kpis.DPI < 40) archetype = "On-Base Specialist";
+        if (kpis.CAS > 90) archetype = "Elite Ball-Striker";
+
+        // Strengths & Risks
+        let strengths = [];
+        if (p.XWOBA > 80) strengths.push("Elite overall production");
+        if (p.BARREL > 85) strengths.push("Top-tier barrel control");
+        if (p.K < 20) strengths.push("Elite contact skills");
+
+        let risks = [];
+        if (p.CHASE > 70) risks.push("High chase rate vulnerability");
+        if (p.K > 70) risks.push("Significant swing-and-miss risk");
+        if (Math.abs(kpis.DPI - kpis.DQS) > 30) risks.push("Highly volatile profile");
+
+        return {
+            score,
+            grade: score >= 90 ? "A+" : score >= 80 ? "A" : score >= 70 ? "B" : score >= 60 ? "C" : "D",
+            risk: risks.length > 1 ? "HIGH" : risks.length > 0 ? "MED" : "LOW",
+            confidence: 0.94,
+            archetype,
+            summary: score >= 85 ? "Cornerstone offensive asset." : "Productive major league regular.",
+            recommendation: score >= 80 ? "PRIORITY TARGET" : "MONITOR FIT",
+            strengths: strengths.join(", ") || "Consistent production",
+            risks: risks.join(", ") || "Standard regression"
+        };
+    }
+};
+
+// --- DATA ENGINE ---
+const Data = {
+    cache: new Map(),
+
+    fetchCSV: async (endpoint) => {
+        const key = `${endpoint}_${CONFIG.YEAR}`;
+        if (Data.cache.has(key)) return Data.cache.get(key);
+
+        const url = `/api/savant?endpoint=${endpoint}&year=${CONFIG.YEAR}`;
+        try {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error("Network response was not ok");
+            const text = await res.text();
+            const data = Data.parseCSV(text);
+            Data.cache.set(key, data);
+            return data;
+        } catch (e) {
+            console.error("Fetch failed", e);
+            return null;
+        }
+    },
+
+    parseCSV: (text) => {
+        const lines = text.trim().split("\n");
+        const headers = lines[0].split(",").map(h => h.trim());
+        return lines.slice(1).map(line => {
+            const values = line.split(",");
+            let obj = {};
+            headers.forEach((h, i) => obj[h] = values[i]);
+            return obj;
+        });
+    },
+
+    normalizeName: (n) => {
+        if (!n) return "";
+        if (n.includes(",")) {
+            const [last, first] = n.split(",").map(s => s.trim());
+            return `${first} ${last}`.toLowerCase();
+        }
+        return n.toLowerCase();
+    }
+};
+
+// --- UI ENGINE ---
+const UI = {
+    getColor: (p) => {
+        if (p >= 90) return { fill: '#ef4444', bubble: '#ef4444' }; // Red
+        if (p >= 70) return { fill: '#f97316', bubble: '#f97316' }; // Orange
+        if (p >= 40) return { fill: '#64748b', bubble: '#64748b' }; // Gray
+        return { fill: '#3b82f6', bubble: '#3b82f6' }; // Blue
+    },
+
+    renderBar: (container, label, pct, raw) => {
+        const tpl = document.getElementById("pct-row-tpl");
+        const node = tpl.content.cloneNode(true);
+        const colors = UI.getColor(pct);
+
+        node.querySelector(".pct-label").textContent = label;
+        const fill = node.querySelector(".pct-fill");
+        const bubble = node.querySelector(".pct-bubble");
+        
+        // Initial state for animation
+        fill.style.width = "0%";
+        bubble.style.left = "0%";
+        
+        setTimeout(() => {
+            fill.style.width = pct + "%";
+            fill.style.background = colors.fill;
+            bubble.style.left = pct + "%";
+            bubble.style.background = colors.bubble;
+            bubble.textContent = pct;
+        }, 50);
+
+        node.querySelector(".pct-raw").textContent = raw || "—";
+        container.appendChild(node);
+    },
+
+    renderProfile: (player, comps) => {
+        const profile = document.getElementById("profile");
+        profile.classList.remove("active");
+
+        document.getElementById("playerName").textContent = player.name.toUpperCase();
+        document.getElementById("playerMeta").textContent = `MLB ID: ${player.id} | SEASON: ${CONFIG.YEAR}`;
+
+        // Render KPIs
+        const kpiContainer = document.getElementById("kpis");
+        const pFlat = {};
+        Object.keys(player.metrics).forEach(k => pFlat[k] = player.metrics[k].pct);
+        
+        const kpis = {
+            CAS: Analytics.CAS(pFlat),
+            DQS: Analytics.DQS(pFlat),
+            DPI: Analytics.DPI(pFlat),
+            TPVI: Analytics.TPVI(pFlat)
+        };
+
+        kpiContainer.innerHTML = `
+            <div class="kpi-row">
+                ${Object.entries(kpis).map(([k, v]) => `
+                    <div class="kpi-box">
+                        <div class="kpi-label">${k}</div>
+                        <div class="kpi-val">${v}</div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+
+        // Render Percentiles
+        const pctContainer = document.getElementById("percentileGroups");
+        pctContainer.innerHTML = "";
+        
+        CONFIG.GROUPS.forEach(group => {
+            const groupDiv = document.createElement("div");
+            groupDiv.className = "pct-group";
+            groupDiv.innerHTML = `<div class="pct-group-title">${group.title}</div>`;
+            
+            group.items.forEach(key => {
+                if (kpis[key] !== undefined) {
+                    UI.renderBar(groupDiv, key, kpis[key], "—");
+                } else if (player.metrics[key]) {
+                    const m = player.metrics[key];
+                    UI.renderBar(groupDiv, CONFIG.METRICS[key].label, m.pct, m.raw);
+                }
+            });
+            pctContainer.appendChild(groupDiv);
+        });
+
+        // Insights
+        const insContainer = document.getElementById("insights");
+        const ins = [];
+        if (pFlat.XWOBA > 90) ins.push("⚡ ELITE PRODUCTION: Offensive value is in the top 10% of the league.");
+        if (pFlat.BARREL > 85) ins.push("🎯 BARREL MASTER: Exceptional ability to find the sweet spot.");
+        if (pFlat.CHASE < 20) ins.push("👁️ DISCIPLINE: Rare plate coverage and zone awareness.");
+        insContainer.innerHTML = ins.map(i => `<div style="font-size:12px; margin-bottom:4px;">${i}</div>`).join('') || "No significant outliers detected.";
+
+        // JARVIS
+        const jarvisContainer = document.getElementById("jarvis");
+        const j = Analytics.getJarvisModel(pFlat);
+        jarvisContainer.innerHTML = `
+            <div class="jarvis-score">${j.score}</div>
+            <div class="jarvis-meta">
+                <div class="meta-item"><span class="meta-label">GRADE:</span>${j.grade}</div>
+                <div class="meta-item"><span class="meta-label">RISK:</span>${j.risk}</div>
+            </div>
+            <div class="jarvis-section">
+                <div class="section-h">ARCHETYPE</div>
+                <div class="section-body" style="color:var(--accent); font-weight:bold;">${j.archetype}</div>
+            </div>
+            <div class="jarvis-section">
+                <div class="section-h">SUMMARY</div>
+                <div class="section-body">${j.summary}</div>
+            </div>
+            <div class="jarvis-section">
+                <div class="section-h">STRENGTHS</div>
+                <div class="section-body" style="color:#4ade80;">${j.strengths}</div>
+            </div>
+            <div class="jarvis-section">
+                <div class="section-h">RISKS</div>
+                <div class="section-body" style="color:#f87171;">${j.risks}</div>
+            </div>
+            <div style="margin-top:12px; padding:8px; background:rgba(56,189,248,0.1); border-radius:4px; text-align:center; font-weight:bold; color:var(--accent);">
+                ${j.recommendation}
+            </div>
+        `;
+
+        // COMPS
+        const compsContainer = document.getElementById("comps");
+        compsContainer.innerHTML = comps.map(c => `
+            <div class="comp-item">
+                <div class="comp-header">
+                    <span>${c.name.toUpperCase()}</span>
+                    <span style="color:var(--accent)">${c.score}%</span>
+                </div>
+                <div class="comp-reason">${Analytics.explainSimilarity(player.metrics, c.metrics)}</div>
+            </div>
+        `).join('');
+
+        // Static Demo Panels
+        UI.renderDemoPanels();
+
+        setTimeout(() => profile.classList.add("active"), 100);
+    },
+
+    renderDemoPanels: () => {
+        document.getElementById("splits").innerHTML = `
+            <table class="scout-table">
+                <tr><th>SPLIT</th><th>AVG</th><th>OPS</th></tr>
+                <tr><td>vs LHP</td><td>.284</td><td>.852</td></tr>
+                <tr><td>vs RHP</td><td>.312</td><td>.945</td></tr>
+                <tr><td>HOME</td><td>.305</td><td>.910</td></tr>
+            </table>
+        `;
+        document.getElementById("arsenal").innerHTML = `
+            <table class="scout-table">
+                <tr><th>PITCH</th><th>USE%</th><th>VELO</th></tr>
+                <tr><td>4-SEAM</td><td>48.2%</td><td>95.4</td></tr>
+                <tr><td>SLIDER</td><td>24.1%</td><td>86.2</td></tr>
+                <tr><td>CHANGE</td><td>15.5%</td><td>88.1</td></tr>
+            </table>
+        `;
+        document.getElementById("zone").innerHTML = `
+            <div class="zone-grid">
+                <div class="zone-cell zone-red">.450</div><div class="zone-cell zone-orange">.380</div><div class="zone-cell zone-red">.410</div>
+                <div class="zone-cell zone-orange">.320</div><div class="zone-cell zone-gray">.280</div><div class="zone-cell zone-orange">.310</div>
+                <div class="zone-cell zone-blue">.210</div><div class="zone-cell zone-blue">.190</div><div class="zone-cell zone-blue">.220</div>
+            </div>
+        `;
+    },
+
+    showLoader: (show, text) => {
+        document.getElementById("loader").style.display = show ? "block" : "none";
+        if (text) document.getElementById("loaderText").textContent = text;
+    }
+};
+
+// --- APPLICATION CONTROLLER ---
+const App = {
+    allPlayers: [],
+    leagueData: {},
+
+    init: async () => {
+        UI.showLoader(true, "CONNECTING TO STATCAST PIPELINE...");
+        const [lb, exp] = await Promise.all([
+            Data.fetchCSV("statcast_leaderboard"),
+            Data.fetchCSV("expected_statistics")
+        ]);
+
+        if (!lb || !exp) {
+            alert("System Offline: Could not connect to data source.");
+            return;
+        }
+
+        // Build league arrays for percentiles
+        Object.keys(CONFIG.METRICS).forEach(key => {
+            const col = CONFIG.METRICS[key].col;
+            App.leagueData[key] = exp.map(r => parseFloat(r[col])).filter(v => !isNaN(v));
+        });
+
+        // Map all players
+        App.allPlayers = lb.map(r => ({
+            name: Data.normalizeName(r["last_name, first_name"]),
+            id: r.player_id,
+            raw: r
+        }));
+
+        // Populate datalist
+        const dl = document.getElementById("playerList");
+        App.allPlayers.slice(0, 100).forEach(p => {
+            const opt = document.createElement("option");
+            opt.value = p.name.split(' ').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+            dl.appendChild(opt);
+        });
+
+        UI.showLoader(false);
+    },
+
+    handleSearch: async () => {
+        const input = document.getElementById("playerInput").value.toLowerCase();
+        if (!input) return;
+
+        UI.showLoader(true, `SEARCHING FOR ${input.toUpperCase()}...`);
+        
+        const player = App.allPlayers.find(p => p.name === input || p.name.includes(input));
+        if (!player) {
+            UI.showLoader(false);
+            alert("PLAYER NOT FOUND IN DATABASE");
+            return;
+        }
+
+        // Process Player Metrics
+        player.metrics = {};
+        Object.keys(CONFIG.METRICS).forEach(key => {
+            const m = CONFIG.METRICS[key];
+            const rawVal = parseFloat(player.raw[m.col]);
+            player.metrics[key] = {
+                pct: Analytics.calculatePercentile(App.leagueData[key], rawVal, m.higher),
+                raw: isNaN(rawVal) ? "—" : rawVal.toFixed(3).replace(/^0/, '')
+            };
+        });
+
+        // Find Comps
+        const comps = App.allPlayers
+            .filter(p => p.id !== player.id)
+            .map(p => {
+                const pMetrics = {};
+                Object.keys(CONFIG.METRICS).forEach(key => {
+                    const m = CONFIG.METRICS[key];
+                    pMetrics[key] = { pct: Analytics.calculatePercentile(App.leagueData[key], parseFloat(p.raw[m.col]), m.higher) };
+                });
+                return { name: p.name, metrics: pMetrics, score: Analytics.getSimilarity(player.metrics, pMetrics) };
+            })
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 5);
+
+        UI.renderProfile(player, comps);
+        UI.showLoader(false);
+    }
+};
+
+// Initialize on load
+window.onload = App.init;
+</script>
+</body>
+</html>

@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MLB Intelligence Terminal | v5.2 Trade Engine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;700&family=Barlow:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #07102D;
+            --card: rgba(15, 23, 42, 0.8);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #FFFFFF;
+            --muted: #A0B4CC;
+            --accent: #E8722A;
+            --accent-secondary: #5AB4F5;
+            
+            /* Semantic Colors */
+            --red-elite: #C0392B;
+            --orange-avg: #E8722A;
+            --gold-val: #F5C842;
+            --green-pos: #4DCE8A;
+            --gray-neu: #A0B4CC;
+            --blue-poor: #2471A3;
+            --dark-blue: #1A3A5C;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: 'Barlow', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+            background-size: 28px 28px;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .brand {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.5rem;
+            letter-spacing: 2px;
+            color: var(--accent);
+            text-shadow: 0 0 15px rgba(232, 114, 42, 0.3);
+        }
+
+        .search-area {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        select, input {
+            background: #000;
+            border: 1px solid var(--border);
+            color: white;
+            padding: 10px 15px;
+            font-family: 'Barlow Condensed', sans-serif;
+            border-radius: 2px;
+        }
+
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:hover { filter: brightness(1.2); transform: translateY(-1px); }
+
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--border);
+            padding: 15px;
+            position: relative;
+            margin-bottom: 20px;
+            backdrop-filter: blur(5px);
+        }
+
+        .panel-primary {
+            border: 1px solid rgba(232, 114, 42, 0.4);
+            box-shadow: 0 0 25px rgba(232, 114, 42, 0.05);
+        }
+
+        .panel-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.2rem;
+            color: var(--muted);
+            margin-bottom: 15px;
+            border-left: 3px solid var(--accent);
+            padding-left: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 320px 1fr 350px;
+            gap: 20px;
+        }
+
+        .jarvis-header { text-align: center; padding: 10px 0; }
+        .jarvis-score-large { font-family: 'Bebas Neue', sans-serif; font-size: 5rem; line-height: 1; color: var(--accent); }
+        .jarvis-grade { font-family: 'Barlow Condensed', sans-serif; font-size: 1.5rem; font-weight: bold; margin-bottom: 10px; }
+        .jarvis-badge { display: inline-block; padding: 3px 8px; font-size: 10px; font-weight: bold; border-radius: 2px; margin: 2px; text-transform: uppercase; }
+
+        .pct-row { display: grid; grid-template-columns: 100px 1fr 45px; gap: 10px; align-items: center; margin-bottom: 8px; }
+        .pct-label { font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: bold; }
+        .pct-track { height: 10px; background: rgba(255,255,255,0.05); position: relative; border-radius: 5px; }
+        .pct-fill { height: 100%; border-radius: 5px; transition: width 0.8s ease-out; }
+        .pct-val { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-align: right; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th { text-align: left; color: var(--muted); padding: 8px; border-bottom: 1px solid var(--border); font-family: 'Barlow Condensed', sans-serif; }
+        td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.02); }
+
+        .loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(7, 16, 45, 0.9);
+            display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 1000;
+        }
+
+        .spinner { width: 50px; height: 50px; border: 3px solid rgba(232, 114, 42, 0.1); border-top: 3px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loader">
+    <div class="spinner"></div>
+    <div style="margin-top:20px; font-family: 'Bebas Neue'; letter-spacing: 2px;" id="loader-text">SYNCING SATELLITE DATA...</div>
+</div>
+
+<div class="container">
+    <header>
+        <div class="brand">BASEBALL INTELLIGENCE TERMINAL</div>
+        <div class="search-area">
+            <select id="team-context">
+                <option value="">Select Team Context</option>
+                <option value="109">Arizona Diamondbacks</option>
+                <option value="144">Atlanta Braves</option>
+                <option value="110">Baltimore Orioles</option>
+                <option value="111">Boston Red Sox</option>
+                <option value="112">Chicago Cubs</option>
+                <option value="145">Chicago White Sox</option>
+                <option value="113">Cincinnati Reds</option>
+                <option value="114">Cleveland Guardians</option>
+                <option value="115">Colorado Rockies</option>
+                <option value="116">Detroit Tigers</option>
+                <option value="117">Houston Astros</option>
+                <option value="118">Kansas City Royals</option>
+                <option value="108">Los Angeles Angels</option>
+                <option value="119">Los Angeles Dodgers</option>
+                <option value="146">Miami Marlins</option>
+                <option value="158">Milwaukee Brewers</option>
+                <option value="142">Minnesota Twins</option>
+                <option value="121">New York Mets</option>
+                <option value="147">New York Yankees</option>
+                <option value="133">Oakland Athletics</option>
+                <option value="143">Philadelphia Phillies</option>
+                <option value="134">Pittsburgh Pirates</option>
+                <option value="135">San Diego Padres</option>
+                <option value="137">San Francisco Giants</option>
+                <option value="136">Seattle Mariners</option>
+                <option value="138">St. Louis Cardinals</option>
+                <option value="139">Tampa Bay Rays</option>
+                <option value="140">Texas Rangers</option>
+                <option value="141">Toronto Blue Jays</option>
+                <option value="120">Washington Nationals</option>
+            </select>
+            <input type="text" id="player-search" placeholder="Search Player Identity..." list="player-list">
+            <datalist id="player-list"></datalist>
+            <button onclick="App.executeSearch()">EXECUTE</button>
+        </div>
+    </header>
+
+    <div class="dashboard-grid" id="main-ui">
+        <aside>
+            <div class="panel">
+                <div class="panel-title">IDENTITY</div>
+                <div id="player-hero">
+                    <h2 id="ui-player-name" style="margin:0; font-family:'Bebas Neue'; font-size:2rem;">—</h2>
+                    <div id="ui-player-meta" style="font-size:12px; color:var(--muted);">STANDING BY...</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">STATCAST PERCENTILES</div>
+                <div id="ui-percentiles"></div>
+            </div>
+        </aside>
+
+        <main>
+            <div class="panel panel-primary">
+                <div class="panel-title">CORE KPI ENGINE</div>
+                <div id="ui-kpis" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:15px; text-align:center;"></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">INTELLIGENCE FEED</div>
+                <div id="ui-insights" style="font-size:13px; line-height:1.6;"></div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                <div class="panel">
+                    <div class="panel-title">SPLITS <span style="font-size:9px; background:rgba(255,255,255,0.1); padding:2px 5px; border-radius:2px;">SIMULATED</span></div>
+                    <div id="ui-splits"></div>
+                </div>
+                <div class="panel">
+                    <div class="panel-title">ARSENAL <span style="font-size:9px; background:rgba(255,255,255,0.1); padding:2px 5px; border-radius:2px;">SIMULATED</span></div>
+                    <div id="ui-arsenal"></div>
+                </div>
+            </div>
+        </main>
+
+        <aside>
+            <div class="panel panel-primary" style="border-color: var(--accent);">
+                <div class="panel-title" style="color:var(--accent);">JARVIS DECISION ENGINE</div>
+                <div id="ui-jarvis"></div>
+            </div>
+
+            <div class="panel panel-primary">
+                <div class="panel-title">TRADE ENGINE</div>
+                <div id="ui-trade"></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">COMPS+</div>
+                <div id="ui-comps"></div>
+            </div>
+        </aside>
+    </div>
+</div>
+
+<script>
+/**
+ * MLB INTELLIGENCE TERMINAL v5.2
+ * Integrated Trade Engine & Strategic Decision System
+ */
+
+const CONFIG = {
+    YEAR: 2026,
+    THRESHOLD: { ELITE: 90, STRONG: 75, WEAK: 25 },
+    METRICS: {
+        xwoba: { label: 'xwOBA', higher: true },
+        xslg: { label: 'xSLG', higher: true },
+        hardhit: { label: 'HardHit%', col: 'hard_hit_percent', higher: true },
+        barrel: { label: 'Barrel%', col: 'brl_percent', higher: true },
+        bb: { label: 'BB%', col: 'bb_percent', higher: true },
+        k: { label: 'K%', col: 'k_percent', higher: false },
+        chase: { label: 'Chase%', col: 'chase_percent', higher: false },
+        ev: { label: 'Avg EV', col: 'avg_hit_speed', higher: true }
+    }
+};
+
+const TradeEngine = {
+  evaluate(playerPcts, kpis, teamContext) {
+    const talent = kpis.TPVI;
+    const fit = this.calculateFit(playerPcts, teamContext);
+    const riskPenalty = this.calculateRisk(playerPcts, kpis);
+    const net = Math.round(talent + fit - riskPenalty);
+    return {
+      talent,
+      fit,
+      riskPenalty,
+      net,
+      verdict: this.getVerdict(net),
+      explanation: this.getExplanation(playerPcts, fit, riskPenalty)
+    };
+  },
+  calculateFit(p, team) {
+    if (!team || !team.stats) return 0;
+    const stats = team.stats?.[0]?.splits?.[0]?.stat || {};
+    const teamOPS = parseFloat(stats.onBasePlusSlugging || 0);
+    const teamK = parseFloat(stats.strikeOuts || 0);
+    let score = 0;
+    if (teamOPS < 0.720 && p.barrel > 70) score += 12;
+    if (p.k < 30 && p.chase < 40) score += 10;
+    if (p.k > 75 && teamK > 1300) score -= 10;
+    return score;
+  },
+  calculateRisk(p, k) {
+    let penalty = 0;
+    const variance = Math.abs(k.DPI - k.DQS);
+    if (variance > 30) penalty += 8;
+    if (p.chase > 75) penalty += 6;
+    if (p.k > 80) penalty += 8;
+    return penalty;
+  },
+  getVerdict(score) {
+    if (score >= 140) return "🔥 AGGRESSIVE TRADE TARGET";
+    if (score >= 120) return "✅ STRONG BUY";
+    if (score >= 100) return "⚖️ CONDITIONAL FIT";
+    if (score >= 85) return "👀 MONITOR";
+    return "❌ PASS";
+  },
+  getExplanation(p, fit, risk) {
+    let notes = [];
+    if (fit > 10) notes.push("Addresses critical team weakness");
+    if (p.barrel > 85) notes.push("Adds elite power upside");
+    if (risk > 10) notes.push("High volatility profile");
+    return notes.join(" • ");
+  }
+};
+
+const App = {
+    context: { team: null, league: null },
+    cache: new Map(),
+    players: [],
+
+    async init() {
+        this.showLoader(true, "INITIALIZING NEURAL NETWORK...");
+        const lb = await this.fetchJSON('/api/savant?endpoint=statcast_leaderboard&year=' + CONFIG.YEAR + '&v=2');
+        const exp = await this.fetchJSON('/api/savant?endpoint=expected_statistics&year=' + CONFIG.YEAR + '&v=2');
+        if (!lb || !exp) { this.showLoader(false); alert("SYSTEM OFFLINE: DATA PIPELINE FAILURE"); return; }
+
+        // Merge lb + exp by player_id so every player has all metric columns
+        const expMap = new Map(exp.map(p => [String(p.player_id), p]));
+        this.players = lb.map(r => {
+            const extra = expMap.get(String(r.player_id)) || {};
+            const merged = { ...extra, ...r }; // lb wins on conflict (more granular)
+            return {
+                id: r.player_id,
+                name: this.normalizeName(r["last_name, first_name"] || r.last_name || r.name || ""),
+                raw: merged
+            };
+        }).filter(p => p.name);
+
+        // Build league percentile arrays from merged player data
+        this.context.league = {};
+        Object.keys(CONFIG.METRICS).forEach(key => {
+            const col = CONFIG.METRICS[key].col || key;
+            this.context.league[key] = this.players.map(p => parseFloat(p.raw[col])).filter(v => !isNaN(v)).sort((a,b) => a-b);
+        });
+
+        this.populateSearch();
+        this.showLoader(false);
+    },
+
+    async fetchJSON(url, timeoutMs = 8000) {
+        if (this.cache.has(url)) return this.cache.get(url);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+            const res = await fetch(url, { signal: controller.signal });
+            clearTimeout(timeout);
+            if (!res.ok) return null;
+            const data = await res.json();
+            this.cache.set(url, data);
+            return data;
+        } catch (e) { console.error('[Fetch Error]', e); return null; }
+    },
+
+    normalizeName(n) {
+        if (!n) return "";
+        const parts = n.split(',').map(s => s.trim());
+        return parts.length > 1 ? `${parts[1]} ${parts[0]}`.toLowerCase() : n.toLowerCase();
+    },
+
+    populateSearch() {
+        const list = document.getElementById('player-list');
+        this.players.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.name.split(' ').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+            list.appendChild(opt);
+        });
+    },
+
+    async executeSearch() {
+        const input = document.getElementById('player-search').value.toLowerCase();
+        const teamId = document.getElementById('team-context').value;
+        if (!input) return;
+        this.showLoader(true, `SEARCHING: ${input.toUpperCase()}...`);
+        if (teamId) { this.context.team = await this.fetchJSON(`/api/mlb?path=/teams/${teamId}/stats&season=${CONFIG.YEAR}&group=hitting`); }
+        const player = this.players.find(p => p.name === input || p.name.startsWith(input) || p.name.includes(input));
+        if (!player) { this.showLoader(false); alert("PLAYER IDENTITY NOT FOUND"); return; }
+        this.renderPlayer(player);
+        this.showLoader(false);
+    },
+
+    renderPlayer(player) {
+        const pcts = {};
+        Object.keys(CONFIG.METRICS).forEach(key => {
+            const m = CONFIG.METRICS[key];
+            const val = parseFloat(player.raw[m.col || key]);
+            pcts[key] = this.calcPct(this.context.league[key], val, m.higher);
+        });
+        const safe = (v) => (v === null || v === undefined || isNaN(v) ? 50 : v);
+        const kpis = {
+            CAS: Math.round(0.5 * safe(pcts.xwoba) + 0.3 * safe(pcts.hardhit) + 0.2 * safe(pcts.barrel)),
+            DQS: Math.round(0.5 * safe(pcts.bb) + 0.3 * (100 - safe(pcts.k)) + 0.2 * (100 - safe(pcts.chase))),
+            DPI: Math.round(0.6 * safe(pcts.xslg) + 0.25 * safe(pcts.barrel) + 0.15 * safe(pcts.ev)),
+        };
+        kpis.TPVI = Math.round((kpis.CAS + kpis.DQS + kpis.DPI) / 3);
+        const jarvis = this.buildJarvis(pcts, kpis);
+        const trade = TradeEngine.evaluate(pcts, kpis, this.context.team);
+
+        document.getElementById('ui-player-name').textContent = player.name.toUpperCase();
+        document.getElementById('ui-player-meta').textContent = `MLB ID: ${player.id} | ${this.context.team ? 'TEAM CONTEXT ACTIVE' : 'GLOBAL CONTEXT'}`;
+
+        this.renderPercentiles(pcts);
+        this.renderKPIs(kpis);
+        this.renderInsights(pcts, kpis);
+        this.renderJarvis(jarvis);
+        this.renderTrade(trade);
+        this.renderComps(pcts);
+        this.renderSimulatedPanels(pcts);
+    },
+
+    calcPct(arr, val, higherBetter) {
+        if (isNaN(val) || !arr || arr.length < 25) return null;
+        let idx = arr.findIndex(x => x >= val);
+        if (idx === -1) idx = arr.length - 1;
+        let p = Math.round((idx / arr.length) * 100);
+        return higherBetter ? p : 100 - p;
+    },
+
+    buildJarvis(p, k) {
+        const score = Math.round(0.35 * k.TPVI + 0.25 * k.CAS + 0.20 * k.DPI + 0.20 * k.DQS);
+        const variance = Math.abs(k.DPI - k.DQS);
+        let archetype = "Balanced Regular";
+        if (k.DPI > 85 && k.DQS < 40) archetype = "Pure Power Threat";
+        if (k.DQS > 85 && k.DPI < 40) archetype = "On-Base Specialist";
+        if (k.CAS > 90) archetype = "Elite Ball-Striker";
+        const strengths = [];
+        if (p.xwoba >= CONFIG.THRESHOLD.ELITE) strengths.push("Top 10% Offensive Producer");
+        if (p.barrel >= CONFIG.THRESHOLD.STRONG) strengths.push("High-End Barrel Control");
+        if (p.k <= 15) strengths.push("Elite Contact Skills");
+        const risks = [];
+        if (variance > 30) risks.push("Highly Volatile Performance Profile");
+        if (p.chase > CONFIG.THRESHOLD.STRONG) risks.push("Aggressive Plate Approach Vulnerability");
+        return {
+            score, grade: score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F',
+            archetype, strengths, risks, recommendation: score >= 85 ? "PRIORITY ACQUISITION" : "MONITOR PERFORMANCE",
+            riskLevel: risks.length > 1 ? "HIGH" : risks.length > 0 ? "MED" : "LOW"
+        };
+    },
+
+    renderPercentiles(pcts) {
+        const container = document.getElementById('ui-percentiles');
+        container.innerHTML = "";
+        Object.entries(pcts).forEach(([key, val]) => {
+            if (val === null || isNaN(val)) return;
+            const color = val >= 70 ? 'var(--red-elite)' : val >= 40 ? 'var(--gray-neu)' : 'var(--blue-poor)';
+            container.innerHTML += `<div class="pct-row"><div class="pct-label">${CONFIG.METRICS[key].label}</div><div class="pct-track"><div class="pct-fill" style="width:${val}%; background:${color};"></div></div><div class="pct-val">${val}</div></div>`;
+        });
+    },
+
+    renderKPIs(k) {
+        const container = document.getElementById('ui-kpis');
+        container.innerHTML = Object.entries(k).map(([key, val]) => `<div><div style="font-size:10px; color:var(--muted);">${key}</div><div style="font-size:24px; font-weight:bold; color:var(--accent);">${val}</div></div>`).join('');
+    },
+
+    renderInsights(p, k) {
+        const container = document.getElementById('ui-insights');
+        const items = [];
+        if (p.k > 80 && p.chase > 70) items.push("⚠️ EXPLOIT: Chase/whiff profile vulnerable to breaking balls out of zone.");
+        if (p.xwoba > 90) items.push("🚀 ELITE: Underlying metrics suggest sustainable top-tier production.");
+        if (Math.abs(k.DPI - k.DQS) > 30) items.push("📉 VOLATILITY: High power/discipline gap suggests boom-or-bust outcomes.");
+        container.innerHTML = items.map(i => `<div style="margin-bottom:8px; border-left:2px solid var(--accent); padding-left:10px;">${i}</div>`).join('') || "No critical outliers detected.";
+    },
+
+    renderJarvis(j) {
+        const container = document.getElementById('ui-jarvis');
+        container.innerHTML = `
+            <div class="jarvis-header">
+                <div class="jarvis-score-large">${j.score}</div>
+                <div class="jarvis-grade">GRADE: ${j.grade} | RISK: ${j.riskLevel}</div>
+                <div style="color:var(--accent); font-weight:bold; margin-bottom:15px;">${j.archetype.toUpperCase()}</div>
+            </div>
+            <div style="margin-bottom:15px;">
+                <div style="font-size:10px; color:var(--muted); margin-bottom:5px;">STRENGTHS</div>
+                ${j.strengths.map(s => `<div class="jarvis-badge" style="background:rgba(77,206,138,0.2); color:var(--green-pos);">${s}</div>`).join('')}
+            </div>
+            <div style="margin-bottom:15px;">
+                <div style="font-size:10px; color:var(--muted); margin-bottom:5px;">RISKS</div>
+                ${j.risks.map(r => `<div class="jarvis-badge" style="background:rgba(192,57,43,0.2); color:var(--red-elite);">${r}</div>`).join('')}
+            </div>
+            <div style="background:rgba(232,114,42,0.1); padding:10px; text-align:center; font-weight:bold; color:var(--accent); border:1px solid rgba(232,114,42,0.3);">${j.recommendation}</div>
+        `;
+    },
+
+    renderTrade(trade) {
+      const el = document.getElementById('ui-trade');
+      el.innerHTML = `
+        <div style="text-align:center; margin-bottom:15px;">
+          <div style="font-size:38px; font-family:'Bebas Neue'; color:var(--accent);">${trade.net}</div>
+          <div style="font-size:12px; color:var(--muted);">NET TRADE VALUE</div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; text-align:center;">
+          <div><div style="font-size:10px; color:var(--muted)">TALENT</div><div style="font-weight:bold">${trade.talent}</div></div>
+          <div><div style="font-size:10px; color:var(--muted)">FIT</div><div style="font-weight:bold; color:var(--green-pos)">+${trade.fit}</div></div>
+          <div><div style="font-size:10px; color:var(--muted)">RISK</div><div style="font-weight:bold; color:var(--red-elite)">-${trade.riskPenalty}</div></div>
+        </div>
+        <div style="margin-top:15px; padding:10px; text-align:center; background:rgba(232,114,42,0.1); border:1px solid rgba(232,114,42,0.3); font-weight:bold;">${trade.verdict}</div>
+        <div style="margin-top:10px; font-size:11px; color:var(--muted); line-height:1.5;">${trade.explanation}</div>
+      `;
+    },
+
+    renderComps(targetPcts) {
+        const container = document.getElementById('ui-comps');
+        const comps = this.players.slice(0, 50).map(p => {
+            const pPcts = {};
+            Object.keys(CONFIG.METRICS).forEach(key => {
+                const val = parseFloat(p.raw[CONFIG.METRICS[key].col || key]);
+                pPcts[key] = this.calcPct(this.context.league[key], val, CONFIG.METRICS[key].higher);
+            });
+            let diff = 0, count = 0;
+            Object.keys(targetPcts).forEach(key => { if (targetPcts[key] && pPcts[key]) { diff += Math.abs(targetPcts[key] - pPcts[key]); count++; } });
+            return { name: p.name, score: Math.round(100 - (diff / count)) };
+        }).sort((a,b) => b.score - a.score).slice(1, 6);
+        container.innerHTML = comps.map(c => `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05);"><span style="font-family:'Barlow Condensed'; font-weight:bold;">${c.name.toUpperCase()}</span><span style="color:var(--accent); font-family:'JetBrains Mono';">${c.score}%</span></div>`).join('');
+    },
+
+    renderSimulatedPanels(pcts) {
+        const isPower = pcts.barrel > 70;
+        document.getElementById('ui-splits').innerHTML = `<table><tr><th>SPLIT</th><th>AVG</th><th>OPS</th></tr><tr><td>vs LHP</td><td>.${isPower ? '285' : '260'}</td><td>.${isPower ? '890' : '710'}</td></tr><tr><td>vs RHP</td><td>.${isPower ? '310' : '275'}</td><td>.${isPower ? '940' : '750'}</td></tr></table>`;
+        document.getElementById('ui-arsenal').innerHTML = `<table><tr><th>PITCH</th><th>USE%</th><th>VELO</th></tr><tr><td>4-SEAM</td><td>52%</td><td>94.8</td></tr><tr><td>SLIDER</td><td>28%</td><td>85.4</td></tr></table>`;
+    },
+
+    showLoader(show, text) { const el = document.getElementById('loader'); el.style.display = show ? 'flex' : 'none'; if (text) document.getElementById('loader-text').textContent = text; }
+};
+
+window.onload = () => App.init();
+</script>
+</body>
+</html>

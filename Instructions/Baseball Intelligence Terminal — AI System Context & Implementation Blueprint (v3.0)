@@ -1,0 +1,141 @@
+# Baseball Intelligence Terminal — AI System Context & Implementation Blueprint (v3.0)
+
+This document is the **Single Source of Truth** for the **Baseball Intelligence Terminal**. It merges core system context, architectural mandates, and **direct audit recommendations** based on your current `index.html` to guide an AI (like Claude) in building a professional-grade MLB analytics system.
+
+---
+
+## 📋 Table of Contents
+1. [Project Identity & Core Philosophy](#1-project-identity--core-philosophy)
+2. [System Purpose & Success Criteria](#2-system-purpose--success-criteria)
+3. [Direct Audit Recommendations (Based on your index.html)](#3-direct-audit-recommendations)
+4. [Critical Architecture Mandates](#4-critical-architecture-mandates)
+5. [Data Architecture & Proxy Routing](#5-data-architecture--proxy-routing)
+6. [Analytics Philosophy & Percentile Engine](#6-analytics-philosophy--percentile-engine)
+7. [UI / Visual System Rules (STRICT SPEC)](#7-ui--visual-system-rules)
+8. [Advanced Analytics & Meta Metrics (CAS, DQS, DPI, TPVI)](#8-advanced-analytics--meta-metrics)
+9. [UI Engine & Modular Rendering](#9-ui-engine--modular-rendering)
+10. [Scouting & Valuation Engines](#10-scouting--valuation-engines)
+11. [Performance, Caching & Production Polish](#11-performance-caching--production-polish)
+12. [Final Implementation Checklist](#12-final-implementation-checklist)
+
+---
+
+## 1. Project Identity & Core Philosophy
+*   **Identity:** A Baseball Intelligence Terminal (Bloomberg-style).
+*   **Philosophy:** Dense, controlled information; no decorative UI; functional visuals only.
+
+---
+
+## 2. System Purpose & Success Criteria
+*   **Purpose:** Transform raw data into decision-ready insights and scouting-grade evaluations.
+*   **Success:** No fabricated data, consistent percentiles, and a professional "front-office" feel.
+
+---
+
+## 3. Direct Audit Recommendations (Based on your index.html)
+
+🚨 **SPECIFIC IMPROVEMENTS FOR YOUR CURRENT CODE:**
+
+### 1) Upgrade Percentile Bars (Visual Spec Gap)
+*   **Current State:** Your `.pct-bar-wrap` uses a simple track and fill.
+*   **Recommendation:** Implement the **Savant Bubble Spec**. The percentile number must sit in a circle (~22px) positioned exactly at the fill's edge. Add a vertical midpoint line at 50% to every track.
+
+### 2) Implement the "Meta Metrics" KPI Row
+*   **Current State:** You show raw percentiles immediately.
+*   **Recommendation:** Add a top-level KPI row in the center column. Calculate and display **CAS** (Contact Authority), **DQS** (Decision Quality), and **TPVI** (True Value) before the detailed bars.
+
+### 3) Fix Inline Styles in JavaScript
+*   **Current State:** Your JS (e.g., `renderNotes`, `renderTagChips`) generates HTML with heavy inline styles (e.g., `style="color:..."`).
+*   **Recommendation:** Move these to CSS classes. Use data attributes or CSS variables if dynamic coloring is needed.
+
+### 4) Professionalize Scouting Grades
+*   **Current State:** `avgToGrade` and `velToGrade` use static ranges.
+*   **Recommendation:** Switch to the **Z-Score Mapping** logic. Compute the league mean and standard deviation from your Savant CSVs to generate dynamic, accurate 20-80 grades.
+
+### 5) Robust Caching Layer
+*   **Current State:** You have some basic caches (`hrDataCache`).
+*   **Recommendation:** Implement a global `PLAYER_CACHE` object and use `sessionStorage` for large Savant CSVs to make tab-switching and player-loading instant.
+
+### 6) Add the "Insight Engine"
+*   **Current State:** The system displays data but doesn't interpret it.
+*   **Recommendation:** Create a function that scans a player's model and generates 2-3 "Scout Bullets" (e.g., "Elite exit velocity vs. RHP," "Vulnerable to high fastballs").
+
+---
+
+## 4. Critical Architecture Mandates
+
+*   **JS-Driven UI:** Move away from the monolithic HTML. Use templates and render functions.
+*   **Proxy Everything:** All MLB/Savant calls **MUST** go through `/api/mlb` or `/api/savant`.
+*   **No Hardcoding:** Remove the static Shohei Ohtani block; render all profiles from data.
+
+---
+
+## 5. Data Architecture & Proxy Routing
+*   **MLB API:** `/api/mlb?path=/people/{id}`
+*   **Savant API:** `/api/savant?endpoint=statcast_leaderboard`
+
+---
+
+## 6. Analytics Philosophy & Percentile Engine
+*   **Directional Logic:** Ensure K%, Chase%, and Whiff% percentiles are inverted (Lower = Better).
+*   **Clamping:** All percentiles should be clamped between 1 and 99.
+
+---
+
+## 7. UI / Visual System Rules (STRICT SPEC)
+
+### The Percentile Row Template
+```html
+<template id="tpl-pct-row">
+  <div class="pct-row">
+    <div class="pct-label"></div>
+    <div class="pct-track">
+      <div class="pct-midpoint"></div> <!-- Vertical line at 50% -->
+      <div class="pct-fill"></div>
+      <div class="pct-bubble"></div> <!-- Sits on fill edge -->
+    </div>
+    <div class="pct-raw"></div>
+  </div>
+</template>
+```
+
+---
+
+## 8. Advanced Analytics & Meta Metrics
+
+| Metric | Name | Components |
+| :--- | :--- | :--- |
+| **CAS** | Contact Authority | xwOBA (50%), HardHit% (30%), Barrel% (20%) |
+| **DQS** | Decision Quality | BB% (50%), K% (30%), Chase% (20%) |
+| **DPI** | Damage Potential | xSLG (60%), Barrel% (25%), Avg EV (15%) |
+
+---
+
+## 9. UI Engine & Modular Rendering
+*   Use `document.createDocumentFragment()` for batch updates.
+*   Implement `renderPercentilesGrouped` to create the **VALUE / BATTING / DISCIPLINE** sections.
+
+---
+
+## 10. Scouting & Valuation Engines
+*   **Scouting:** `Grade = 50 + (10 * Z-Score)`.
+*   **Valuation:** `$7.125M per WAR`. Show the range (±1 WAR).
+
+---
+
+## 11. Performance, Caching & Production Polish
+*   **Transition:** `transition: width .6s cubic-bezier(0.4, 0, 0.2, 1)`.
+*   **Glow:** Apply `.elite-glow` (red shadow) for any metric ≥ 90.
+
+---
+
+## 12. Final Implementation Checklist
+*   [ ] Percentile bars use the "Bubble-on-Fill" spec.
+*   [ ] KPI Row (CAS, DQS, TPVI) is visible at the top of profiles.
+*   [ ] All inline styles removed from JS.
+*   [ ] Z-Score logic used for scouting grades.
+*   [ ] `sessionStorage` caching implemented for Savant data.
+*   [ ] Insight Engine provides 2-3 automated scout notes.
+
+---
+**End of Blueprint.**

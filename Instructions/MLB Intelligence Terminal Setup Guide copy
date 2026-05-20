@@ -1,0 +1,43 @@
+# MLB Intelligence Terminal Setup Guide
+
+To get your terminal working correctly, you need to set up a small Vercel project. This is necessary because the MLB and Savant data sources block direct browser requests (CORS).
+
+## 1. File Structure
+Create a folder for your project and arrange the files as follows:
+
+```text
+/your-project-folder
+├── vercel.json           (Routing configuration)
+├── public/
+│   └── index.html        (The index99_v5.html file I provided)
+└── api/
+    ├── mlb.js            (MLB API Proxy)
+    └── savant.js         (Savant Data Proxy)
+```
+
+## 2. Terminal Commands
+Open your terminal (Command Prompt, Terminal, or VS Code Terminal) and run these commands in order:
+
+### Step 1: Install Vercel CLI (If you haven't already)
+```bash
+npm install -g vercel
+```
+
+### Step 2: Navigate to your project folder
+```bash
+cd "path/to/your-project-folder"
+```
+
+### Step 3: Deploy to Vercel
+This will link your project and deploy it live. Follow the prompts (mostly just press Enter).
+```bash
+vercel --prod
+```
+
+## 3. Required Files Content
+I have attached the content for `mlb.js`, `savant.js`, and `vercel.json` to this message. You should rename the `index99_v5.html` I sent earlier to `index.html` and put it inside the `public` folder.
+
+## 4. Why this works
+- **`public/index.html`**: This is your frontend UI.
+- **`api/` folder**: These are "Serverless Functions". They act as a middleman (proxy) that fetches the data from MLB/Savant and sends it to your browser without getting blocked.
+- **`vercel.json`**: This tells the website to route any request starting with `/api/` to the correct script in your `api` folder.

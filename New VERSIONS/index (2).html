@@ -1,0 +1,1637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MLB Intelligence Terminal | 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --orange:#e8722a;--orange-dim:rgba(232,114,42,.15);--blue-bright:#5ab4f5;
+  --green:#4dce8a;--red:#e85a5a;--gold:#f5c842;--navy:#07102d;
+  --navy-mid:#0d1c3a;--navy-light:#0f2040;--navy-border:#1e3055;--text-dim:#a0b4cc;
+  --elite-color:#e85a5a;--good-color:#f5c842;--avg-color:#a0b4cc;--bad-color:#5ab4f5;
+}
+body{font-family:'Barlow',sans-serif;background:radial-gradient(ellipse at top,#c94e10 0%,#1a0800 35%,#030a1a 70%,#01050f 100%);background-attachment:fixed;color:#fff;min-height:100vh;overflow-x:hidden;transition:background .3s ease;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.015) 1px,transparent 1px);background-size:28px 28px;pointer-events:none;z-index:0;opacity:.6;}
+
+/* HEADER */
+.hdr{position:sticky;top:0;z-index:100;background:rgba(3,8,20,.95);border-bottom:2px solid rgba(232,114,42,.25);backdrop-filter:blur(20px);padding:12px 20px;box-shadow:0 8px 32px rgba(0,0,0,.3);}
+.hdr-inner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;max-width:1600px;margin:0 auto;}
+.logo-block .season-label{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--orange);margin-bottom:3px;opacity:.85;}
+.logo-block .dash-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:3px;line-height:1;background:linear-gradient(135deg,#fff 40%,#e8722a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;cursor:pointer;transition:all .3s;font-weight:900;}
+.logo-block .dash-title:hover{text-shadow:0 0 20px rgba(232,114,42,.4);}
+.hdr-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.search-wrap{display:flex;gap:6px;}
+.search-wrap input{background:rgba(13,28,58,.7);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#fff;padding:8px 12px;font-family:'Barlow Condensed',sans-serif;font-size:12px;width:200px;transition:all .2s;box-shadow:inset 0 2px 8px rgba(0,0,0,.2);}
+.search-wrap input::placeholder{color:rgba(160,180,204,.6);}
+.search-wrap input:focus{outline:none;border-color:var(--orange);box-shadow:0 0 16px rgba(232,114,42,.3),inset 0 2px 8px rgba(0,0,0,.2);background:rgba(13,28,58,.9);}
+select.tpick{background:rgba(13,28,58,.7);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#fff;padding:8px 12px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23a0b4cc'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;min-width:180px;transition:all .2s;box-shadow:inset 0 2px 8px rgba(0,0,0,.2);}
+select.tpick:focus{outline:none;border-color:var(--orange);box-shadow:0 0 16px rgba(232,114,42,.3),inset 0 2px 8px rgba(0,0,0,.2);background:rgba(13,28,58,.9);}
+.hdr-btn{background:linear-gradient(135deg,rgba(13,28,58,.6),rgba(15,32,64,.4));border:1px solid rgba(255,255,255,.1);border-radius:7px;color:var(--text-dim);padding:8px 14px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .3s;box-shadow:inset 0 1px 2px rgba(255,255,255,.05);}
+.hdr-btn:hover{background:linear-gradient(135deg,rgba(232,114,42,.25),rgba(232,114,42,.15));border-color:var(--orange);color:#fff;box-shadow:0 0 16px rgba(232,114,42,.25);}
+.hdr-btn:active{transform:scale(.98);}
+
+/* TABS */
+.tabs-wrap{background:rgba(3,8,20,.7);border-bottom:1px solid var(--navy-border);overflow-x:auto;position:relative;z-index:1;}
+.tabs{display:flex;min-width:max-content;padding:0 10px;}
+.tab{padding:10px 14px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;flex-shrink:0;transition:all .2s;}
+.tab.on{color:var(--orange);border-bottom-color:var(--orange);}
+.tab:hover:not(.on){color:#fff;border-bottom-color:rgba(255,255,255,.15);}
+
+/* LAYOUT */
+.body{padding:16px 18px;position:relative;z-index:1;max-width:1600px;margin:0 auto;}
+.pg{display:none;}.pg.on{display:block;}
+
+/* PANELS */
+.panel{background:rgba(7,16,45,.88);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:18px;backdrop-filter:blur(10px);box-shadow:0 8px 32px rgba(0,0,0,.4);margin-bottom:16px;}
+.panel-title{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;border-bottom:1px solid rgba(255,255,255,.07);padding-bottom:10px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
+.sec-title{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:2px;color:var(--orange);margin:12px 0 10px;}
+
+/* STAT CELLS */
+.stat-label{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:3px;}
+.stat-val{font-family:'Bebas Neue',sans-serif;font-size:38px;line-height:1;letter-spacing:1px;color:#fff;}
+.stat-val.green{color:var(--green);}
+.stat-rank{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--orange);margin-top:2px;}
+.stat-cell{border-bottom:1px solid rgba(255,255,255,.06);padding:10px 8px;}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;}
+.stat-grid .stat-cell{border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:12px;}
+
+/* GRIDS */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+
+/* CARDS */
+.card{background:rgba(7,16,45,.88);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;}
+.card-title{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--orange);margin-bottom:8px;}
+.card-val{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--green);}
+
+/* TABLES */
+.tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.tbl th{text-align:left;padding:6px 8px;color:var(--text-dim);font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border-bottom:1px solid var(--navy-border);font-family:'Barlow Condensed',sans-serif;}
+.tbl td{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.04);transition:background .1s;}
+.tbl tr:hover td{background:rgba(255,255,255,.03);}
+.tbl tr:last-child td{border-bottom:none;}
+
+/* BADGES */
+.badge{display:inline-block;padding:2px 7px;border-radius:5px;font-size:10px;font-weight:700;letter-spacing:.5px;font-family:'Barlow Condensed',sans-serif;}
+.badge-active{background:rgba(77,206,138,.15);color:var(--green);border:1px solid rgba(77,206,138,.3);}
+.badge-prospect{background:rgba(90,180,245,.15);color:var(--blue-bright);border:1px solid rgba(90,180,245,.3);}
+.badge-hot{background:rgba(232,114,42,.15);color:var(--orange);border:1px solid rgba(232,114,42,.3);}
+
+/* LEADER ROWS */
+.leader-row{display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid rgba(255,255,255,.05);transition:background .15s;border-radius:7px;cursor:pointer;}
+.leader-row:hover{background:rgba(255,255,255,.04);}
+.leader-rank{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--orange);min-width:22px;text-align:center;}
+.leader-avatar{width:32px;height:32px;border-radius:8px;background:rgba(13,28,58,.8);border:1px solid rgba(255,255,255,.1);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.leader-avatar .av-initials{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--orange);}
+.leader-info{flex:1;min-width:0;}
+.leader-first{font-size:9px;color:var(--text-dim);line-height:1.2;}
+.leader-last{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.leader-val{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--green);}
+
+/* METRIC BARS */
+.metric-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+.metric-row:last-child{border-bottom:none;}
+.metric-label{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--text-dim);min-width:80px;}
+.metric-bar{flex:1;height:10px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden;position:relative;}
+.metric-fill{height:100%;border-radius:4px;transition:width .5s ease;}
+.metric-pct{font-family:'Bebas Neue',sans-serif;font-size:14px;min-width:38px;text-align:right;}
+
+/* PERCENTILE BARS */
+.pct-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.pct-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;min-width:72px;color:var(--text-dim);}
+.pct-track{flex:1;height:14px;background:rgba(255,255,255,.07);border-radius:7px;overflow:hidden;position:relative;}
+.pct-fill{height:100%;border-radius:7px;transition:width .5s ease;}
+.pct-bubble{width:22px;height:22px;border-radius:50%;position:absolute;top:-4px;right:-11px;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;border:1px solid rgba(255,255,255,.2);}
+.pct-val{font-family:'Bebas Neue',sans-serif;font-size:16px;min-width:36px;text-align:right;}
+
+/* PLAYER HEADER */
+.player-header{display:flex;align-items:flex-start;gap:16px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.07);margin-bottom:16px;}
+.player-avatar-lg{width:90px;height:90px;border-radius:12px;background:linear-gradient(135deg,var(--orange),var(--blue-bright));display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:36px;color:#fff;flex-shrink:0;}
+.player-info h1{font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:2px;margin-bottom:4px;color:var(--orange);}
+.player-meta{font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--text-dim);letter-spacing:1px;}
+
+/* PITCH CARDS */
+.pitch-card{background:rgba(7,16,45,.88);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;margin-bottom:10px;}
+.pitch-name{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;color:var(--orange);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.pitch-stat{display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.pitch-stat:last-child{border-bottom:none;}
+.pitch-stat-val{font-family:'Bebas Neue',sans-serif;color:var(--gold);}
+
+/* INSIGHT BOXES */
+.insight-box{background:rgba(77,206,138,.08);border-left:3px solid var(--green);padding:8px 10px;margin:8px 0;border-radius:4px;font-size:11px;line-height:1.4;font-family:'Barlow',sans-serif;}
+.insight-box.insight-warn{background:rgba(245,200,66,.08);border-left-color:var(--gold);}
+.insight-box.insight-bad{background:rgba(232,90,90,.08);border-left-color:var(--red);}
+
+/* HEATMAP & VISUALIZATIONS */
+.heatmap-container{width:100%;height:240px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:12px;margin:12px 0;position:relative;overflow:hidden;}
+.heatmap-canvas{width:100%;height:100%;}
+.zone-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:12px 0;}
+.zone-cell{background:rgba(7,16,45,.88);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px;text-align:center;cursor:pointer;transition:all .2s;}
+.zone-cell:hover{border-color:var(--orange);background:rgba(232,114,42,.1);}
+.zone-label{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;color:var(--text-dim);margin-bottom:4px;}
+.zone-val{font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--orange);}
+
+/* PITCH MIX VISUALIZATION */
+.pitch-mix-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:12px 0;}
+.pitch-mix-card{background:rgba(7,16,45,.88);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;text-align:center;}
+.pitch-mix-icon{font-size:28px;margin-bottom:6px;}
+.pitch-mix-name{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--text-dim);margin-bottom:4px;}
+.pitch-mix-pct{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--green);}
+.pitch-mix-vel{font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--gold);margin-top:2px;}
+
+/* SCOUTING REPORT */
+.scout-section{background:rgba(7,16,45,.88);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px;margin-bottom:12px;}
+.scout-title{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--orange);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.scout-title::before{content:'';display:block;width:8px;height:8px;border-radius:50%;background:var(--orange);}
+.scout-desc{font-size:11px;line-height:1.5;color:var(--text-dim);margin-bottom:8px;}
+.scout-grade{display:flex;align-items:center;gap:8px;margin-top:6px;}
+.grade-label{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;color:var(--text-dim);min-width:60px;}
+.grade-bar{flex:1;height:18px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden;position:relative;}
+.grade-fill{height:100%;background:linear-gradient(90deg,var(--blue-bright),var(--green));border-radius:4px;}
+.grade-val{font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--green);min-width:35px;text-align:right;}
+
+/* COMPARISON PANEL */
+.compare-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin:12px 0;}
+.compare-card{background:rgba(7,16,45,.88);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px;text-align:center;}
+.compare-card-name{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:var(--orange);margin-bottom:10px;}
+.compare-metric{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:11px;}
+.compare-metric-label{color:var(--text-dim);flex:1;text-align:left;}
+.compare-metric-val{font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--green);font-weight:700;}
+.compare-winner{background:rgba(77,206,138,.15);border-radius:4px;padding:2px 6px;font-size:9px;color:var(--green);font-weight:700;}
+
+/* LAUNCH ANGLE CHART */
+.launch-chart{width:100%;height:220px;background:rgba(7,16,45,.88);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;margin:12px 0;position:relative;}
+.launch-axis{font-family:'Barlow Condensed',sans-serif;font-size:9px;color:var(--text-dim);position:absolute;font-weight:700;}
+.launch-x{bottom:8px;left:50%;transform:translateX(-50%);}
+.launch-y{left:2px;top:50%;transform:translateY(-50%);}
+.launch-points{position:absolute;inset:20px;background:linear-gradient(135deg,rgba(255,255,255,.02) 0%,rgba(232,114,42,.05) 100%);}
+
+/* EXIT VELO METER */
+.velo-meter{display:flex;align-items:center;gap:10px;padding:12px;background:rgba(7,16,45,.88);border:1px solid rgba(255,255,255,.08);border-radius:10px;margin:12px 0;}
+.velo-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--text-dim);min-width:80px;}
+.velo-bar{flex:1;height:20px;background:rgba(255,255,255,.06);border-radius:8px;overflow:hidden;position:relative;}
+.velo-fill{height:100%;background:linear-gradient(90deg,var(--blue-bright),var(--green),var(--orange),var(--red));border-radius:8px;}
+.velo-val{font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--green);min-width:50px;text-align:right;}
+
+/* SPRAY CHART */
+.spray-chart{width:100%;height:300px;background:rgba(7,16,45,.88);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;margin:12px 0;position:relative;overflow:hidden;}
+.spray-field{width:100%;height:100%;background:radial-gradient(circle at 50% 0%,rgba(76,175,80,.1) 0%,transparent 70%);border:2px solid rgba(255,255,255,.1);border-radius:50%;position:relative;margin:0 auto;}
+.spray-dot{position:absolute;width:6px;height:6px;border-radius:50%;background:var(--orange);opacity:.7;}
+
+/* PEER COMP SECTION */
+.peer-comp{background:rgba(7,16,45,.88);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px;margin:12px 0;}
+.peer-comp-title{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--orange);margin-bottom:12px;}
+.peer-comp-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.peer-comp-row:last-child{border-bottom:none;}
+.peer-rank{font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--orange);min-width:30px;}
+.peer-name{flex:1;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;}
+.peer-comp-val{color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:13px;}
+
+/* TRADE VALUE CARD */
+.trade-card{background:linear-gradient(135deg,rgba(232,114,42,.15),rgba(90,180,245,.1));border:1px solid rgba(232,114,42,.3);border-radius:10px;padding:16px;margin:12px 0;text-align:center;}
+.trade-label{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;}
+.trade-val{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:2px;background:linear-gradient(135deg,var(--orange),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.trade-meta{font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--orange);margin-top:8px;letter-spacing:1px;}
+
+/* SPLIT STATS */
+.split-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0;}
+.split-card{background:rgba(7,16,45,.88);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;}
+.split-title{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--orange);margin-bottom:10px;}
+.split-stat{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:10px;}
+.split-stat:last-child{border-bottom:none;}
+.split-label{color:var(--text-dim);}
+.split-val{font-family:'Bebas Neue',sans-serif;color:var(--green);font-weight:700;}
+
+/* WAR BREAKDOWN */
+.war-breakdown{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:12px 0;}
+.war-component{background:rgba(7,16,45,.88);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;text-align:center;}
+.war-comp-label{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;color:var(--text-dim);margin-bottom:8px;}
+.war-comp-val{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--orange);}
+.war-comp-bar{width:100%;height:6px;background:rgba(255,255,255,.08);border-radius:3px;margin-top:8px;overflow:hidden;}
+.war-comp-fill{height:100%;background:var(--green);border-radius:3px;}
+
+/* INJURY RISK */
+.injury-indicator{display:flex;align-items:center;gap:8px;padding:10px;background:rgba(232,114,42,.1);border:1px solid rgba(232,114,42,.3);border-radius:8px;margin:12px 0;}
+.injury-dot{width:12px;height:12px;border-radius:50%;background:var(--gold);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.injury-text{font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--orange);font-weight:700;flex:1;}
+.injury-status{font-size:9px;color:var(--text-dim);}
+
+/* TIMELINE */
+.timeline{position:relative;margin:20px 0;padding:20px 0 20px 40px;}
+.timeline::before{content:'';position:absolute;left:12px;top:0;bottom:0;width:2px;background:linear-gradient(180deg,var(--orange),transparent);}
+.timeline-item{position:relative;margin-bottom:20px;}
+.timeline-item::before{content:'';position:absolute;left:-35px;top:3px;width:12px;height:12px;border-radius:50%;background:var(--orange);border:2px solid rgba(3,8,20,.9);}
+.timeline-label{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);margin-bottom:3px;}
+.timeline-content{font-size:11px;color:var(--text-dim);line-height:1.4;}
+.timeline-date{color:var(--orange);font-weight:700;margin-bottom:4px;}
+
+/* GAME LOG */
+.game-log-table{width:100%;margin:12px 0;}
+.game-log-header{background:rgba(232,114,42,.15);padding:10px;border-radius:8px 8px 0 0;display:grid;grid-template-columns:80px 100px 1fr 60px 60px 60px;gap:10px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);margin-bottom:2px;}
+.game-log-row{background:rgba(7,16,45,.6);padding:10px;border:1px solid rgba(255,255,255,.04);border-radius:6px;display:grid;grid-template-columns:80px 100px 1fr 60px 60px 60px;gap:10px;margin-bottom:6px;align-items:center;font-size:11px;transition:background .2s;}
+.game-log-row:hover{background:rgba(232,114,42,.08);border-color:rgba(232,114,42,.3);}
+.game-log-date{color:var(--orange);font-weight:700;}
+.game-log-opp{color:var(--text-dim);}
+.game-log-result{font-family:'Bebas Neue',sans-serif;font-weight:700;}
+.game-log-result.win{color:var(--green);}
+.game-log-result.loss{color:var(--red);}
+.game-log-stat{text-align:center;font-family:'Bebas Neue',sans-serif;color:var(--gold);}
+
+/* HEATMAP GRID */
+.heatmap-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:4px;margin:12px 0;padding:12px;background:rgba(7,16,45,.88);border:1px solid rgba(255,255,255,.08);border-radius:10px;}
+.heatmap-cell{width:100%;aspect-ratio:1;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;border:1px solid rgba(255,255,255,.08);}
+.heatmap-cell:hover{transform:scale(1.1);border-color:var(--orange);}
+.heatmap-cell.cold{background:rgba(90,180,245,.2);}
+.heatmap-cell.cool{background:rgba(90,180,245,.35);}
+.heatmap-cell.warm{background:rgba(232,114,42,.25);}
+.heatmap-cell.hot{background:rgba(232,90,90,.4);}
+.heatmap-cell.fire{background:rgba(232,90,90,.6);color:var(--red);}
+
+/* STAT BOX */
+.stat-box{background:rgba(7,16,45,.88);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px;margin-bottom:12px;}
+.stat-box-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.stat-box-row:last-child{border-bottom:none;}
+.stat-box-label{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;color:var(--text-dim);letter-spacing:1px;}
+.stat-box-val{font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--green);}
+.stat-box-rank{font-family:'Barlow Condensed',sans-serif;font-size:9px;color:var(--orange);margin-left:8px;}
+
+/* STREAKS & MILESTONES */
+.streak-card{background:linear-gradient(135deg,rgba(77,206,138,.15),rgba(90,180,245,.1));border:1px solid rgba(77,206,138,.3);border-radius:10px;padding:14px;margin-bottom:12px;}
+.streak-title{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--green);margin-bottom:8px;}
+.streak-val{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--green);margin-bottom:4px;}
+.streak-desc{font-size:10px;color:var(--text-dim);line-height:1.4;}
+.streak-meta{font-family:'Barlow Condensed',sans-serif;font-size:9px;color:var(--text-dim);margin-top:6px;padding-top:6px;border-top:1px solid rgba(77,206,138,.2);}
+
+/* RANK BADGE */
+.rank-badge{display:inline-block;background:linear-gradient(135deg,var(--orange),var(--gold));padding:6px 10px;border-radius:6px;font-family:'Bebas Neue',sans-serif;font-size:12px;color:#fff;font-weight:700;margin:0 2px;}
+.rank-badge.elite{background:linear-gradient(135deg,var(--green),#4dce8a);}
+.rank-badge.above{background:linear-gradient(135deg,var(--gold),#ffd700);}
+.rank-badge.avg{background:linear-gradient(135deg,var(--text-dim),#7a8fa0);}
+.rank-badge.below{background:linear-gradient(135deg,var(--blue-bright),#5ab4f5);}
+
+/* MINI CHART */
+.mini-chart{width:100%;height:80px;background:rgba(7,16,45,.88);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:8px;margin:8px 0;position:relative;overflow:hidden;}
+.mini-chart-bars{display:flex;align-items:flex-end;height:100%;gap:2px;}
+.mini-chart-bar{flex:1;background:linear-gradient(180deg,var(--orange),var(--gold));border-radius:2px;opacity:.8;transition:opacity .2s;}
+.mini-chart-bar:hover{opacity:1;}
+
+/* PERCENTILE DIAL */
+.percentile-dial{display:inline-flex;align-items:center;justify-content:center;width:60px;height:60px;border-radius:50%;background:conic-gradient(from 0deg, var(--blue-bright) 0%, var(--green) 50%, var(--orange) 100%);padding:2px;margin:0 auto;}
+.percentile-dial-inner{width:100%;height:100%;border-radius:50%;background:rgba(3,8,20,.95);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;font-weight:700;color:var(--orange);}
+
+/* ACHIEVEMENT BADGE */
+.achievement{display:inline-flex;flex-direction:column;align-items:center;margin:8px;padding:12px;background:rgba(7,16,45,.88);border:1px solid rgba(255,255,255,.08);border-radius:10px;width:90px;text-align:center;}
+.achievement-icon{font-size:32px;margin-bottom:6px;}
+.achievement-title{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;color:var(--text-dim);line-height:1.2;}
+.achievement-highlight{color:var(--orange);font-weight:700;}
+
+/* GRID RESPONSIVE FIX */
+@media(max-width:1024px){
+  .game-log-header, .game-log-row{grid-template-columns:70px 80px 1fr 50px 50px 50px;font-size:9px;}
+}
+
+/* RESPONSIVE */
+@media(max-width:1024px){
+  .grid-4{grid-template-columns:repeat(2,1fr);}
+  .grid-3{grid-template-columns:1fr;}
+  .hdr-inner{gap:8px;}
+  .search-wrap input{width:140px;}
+  select.tpick{min-width:140px;}
+  .compare-grid{grid-template-columns:1fr;}
+  .split-row{grid-template-columns:1fr;}
+}
+@media(max-width:768px){
+  .grid-2{grid-template-columns:1fr;}
+  .grid-3{grid-template-columns:1fr;}
+  .grid-4{grid-template-columns:1fr;}
+  .player-header{flex-direction:column;align-items:flex-start;}
+  .logo-block .dash-title{font-size:24px;}
+  .player-info h1{font-size:28px;}
+  .hdr-btn{display:none;}
+  .compare-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-inner">
+    <div class="logo-block">
+      <div class="season-label">2026 Season</div>
+      <div class="dash-title">⚾ INTELLIGENCE TERMINAL</div>
+    </div>
+    <div class="hdr-right">
+      <div class="search-wrap">
+        <input type="text" id="search-input" placeholder="Search player..." />
+        <button class="hdr-btn" onclick="searchPlayer()">SEARCH</button>
+      </div>
+      <select class="tpick" id="team-select" onchange="onTeamChange()">
+        <option value="">SELECT TEAM...</option>
+      </select>
+      <button class="hdr-btn" onclick="refreshData()">↻ REFRESH</button>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs-wrap">
+  <div class="tabs">
+    <div class="tab" onclick="switchTab('dashboard', this)">DASHBOARD</div>
+    <div class="tab" onclick="switchTab('team', this)">TEAM ROSTER</div>
+    <div class="tab" onclick="switchTab('player', this)">PLAYER PROFILE</div>
+    <div class="tab" onclick="switchTab('scouts', this)">SCOUTING</div>
+    <div class="tab" onclick="switchTab('arsenal', this)">PITCH ARSENAL</div>
+    <div class="tab" onclick="switchTab('advanced', this)">ADVANCED STATS</div>
+    <div class="tab" onclick="switchTab('compare', this)">COMPARISON</div>
+    <div class="tab" onclick="switchTab('health', this)">HEALTH & TRENDS</div>
+    <div class="tab" onclick="switchTab('gamelog', this)">GAME LOG</div>
+    <div class="tab" onclick="switchTab('splits', this)">SPLITS & STREAKS</div>
+    <div class="tab" onclick="switchTab('achievements', this)">ACHIEVEMENTS</div>
+  </div>
+</div>
+
+<div class="body">
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════════ -->
+<!-- PAGE: DASHBOARD -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════════ -->
+<div id="dashboard" class="pg">
+  <div class="panel">
+    <div class="panel-title">LEAGUE LEADERS 2026</div>
+    <div class="grid-2">
+      <div>
+        <div class="sec-title">BATTING LEADERS</div>
+        <div id="batting-leaders"></div>
+      </div>
+      <div>
+        <div class="sec-title">PITCHING LEADERS</div>
+        <div id="pitching-leaders"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">HIGHLIGHTS & TRENDS</div>
+    <div class="grid-4">
+      <div class="card">
+        <div class="card-title">AVG HITS/GAME</div>
+        <div class="card-val">9.2</div>
+      </div>
+      <div class="card">
+        <div class="card-title">LEAGUE ERA</div>
+        <div class="card-val">3.91</div>
+      </div>
+      <div class="card">
+        <div class="card-title">K/9 PITCHES</div>
+        <div class="card-val">9.1</div>
+      </div>
+      <div class="card">
+        <div class="card-title">STRIKEOUT RATE</div>
+        <div class="card-val">19.2%</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">ADVANCED METRICS</div>
+    <div class="metric-row">
+      <div class="metric-label">xWOBA</div>
+      <div class="metric-bar"><div class="metric-fill" style="width:62%;background:var(--blue-bright);"></div></div>
+      <div class="metric-pct" style="color:var(--blue-bright);">.338</div>
+    </div>
+    <div class="metric-row">
+      <div class="metric-label">Whiff %</div>
+      <div class="metric-bar"><div class="metric-fill" style="width:44%;background:var(--orange);"></div></div>
+      <div class="metric-pct" style="color:var(--orange);">26.8%</div>
+    </div>
+    <div class="metric-row">
+      <div class="metric-label">Barrel %</div>
+      <div class="metric-bar"><div class="metric-fill" style="width:58%;background:var(--green);"></div></div>
+      <div class="metric-pct" style="color:var(--green);">12.4%</div>
+    </div>
+    <div class="metric-row">
+      <div class="metric-label">EV Avg</div>
+      <div class="metric-bar"><div class="metric-fill" style="width:71%;background:var(--gold);"></div></div>
+      <div class="metric-pct" style="color:var(--gold);">90.2</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════════ -->
+<!-- PAGE: TEAM ROSTER -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════════ -->
+<div id="team" class="pg">
+  <div class="panel">
+    <div class="panel-title">TEAM OFFENSE</div>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>PLAYER</th>
+          <th>POS</th>
+          <th>AVG</th>
+          <th>HR</th>
+          <th>RBI</th>
+          <th>OPS</th>
+          <th>xWOBA</th>
+          <th>WAR</th>
+        </tr>
+      </thead>
+      <tbody id="team-batting"></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">TEAM PITCHING</div>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>PITCHER</th>
+          <th>ERA</th>
+          <th>W-L</th>
+          <th>IP</th>
+          <th>K</th>
+          <th>BB</th>
+          <th>WHIP</th>
+          <th>FIP</th>
+        </tr>
+      </thead>
+      <tbody id="team-pitching"></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">TEAM STATS SNAPSHOT</div>
+    <div class="stat-grid">
+      <div class="stat-cell">
+        <div class="stat-label">RUNS</div>
+        <div class="stat-val" id="team-runs">0</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">HITS</div>
+        <div class="stat-val" id="team-hits">0</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">HR</div>
+        <div class="stat-val" id="team-hr">0</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">ERA</div>
+        <div class="stat-val" id="team-era">0.00</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">K</div>
+        <div class="stat-val" id="team-k">0</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">W-L</div>
+        <div class="stat-val" id="team-wl">0-0</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════════ -->
+<!-- PAGE: PLAYER PROFILE -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════════ -->
+<div id="player" class="pg">
+  <div class="panel">
+    <div class="player-header">
+      <div class="player-avatar-lg">👤</div>
+      <div class="player-info">
+        <h1 id="p-name">SELECT A PLAYER</h1>
+        <div class="player-meta" id="p-meta">Position · Team · Stats</div>
+      </div>
+      <div style="margin-left:auto;text-align:right;">
+        <div class="stat-label">OVERALL RATING</div>
+        <div class="stat-val green" id="p-rating">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">OFFENSIVE PROFILE</div>
+    <div class="grid-2">
+      <div>
+        <div class="sec-title">KEY METRICS</div>
+        <div id="p-metrics"></div>
+      </div>
+      <div>
+        <div class="sec-title">PERCENTILE RANKINGS</div>
+        <div id="p-percentiles"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">CONTACT HEATMAP</div>
+    <div class="heatmap-container">
+      <canvas id="contact-heatmap" class="heatmap-canvas"></canvas>
+    </div>
+    <div class="zone-grid">
+      <div class="zone-cell"><div class="zone-label">UP-LEFT</div><div class="zone-val" id="zone-ul">--</div></div>
+      <div class="zone-cell"><div class="zone-label">UP-MID</div><div class="zone-val" id="zone-um">--</div></div>
+      <div class="zone-cell"><div class="zone-label">UP-RIGHT</div><div class="zone-val" id="zone-ur">--</div></div>
+      <div class="zone-cell"><div class="zone-label">MID-LEFT</div><div class="zone-val" id="zone-ml">--</div></div>
+      <div class="zone-cell"><div class="zone-label">MID-MID</div><div class="zone-val" id="zone-mm">--</div></div>
+      <div class="zone-cell"><div class="zone-label">MID-RIGHT</div><div class="zone-val" id="zone-mr">--</div></div>
+      <div class="zone-cell"><div class="zone-label">LOW-LEFT</div><div class="zone-val" id="zone-ll">--</div></div>
+      <div class="zone-cell"><div class="zone-label">LOW-MID</div><div class="zone-val" id="zone-lm">--</div></div>
+      <div class="zone-cell"><div class="zone-label">LOW-RIGHT</div><div class="zone-val" id="zone-lr">--</div></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">INSIGHTS & ANALYSIS</div>
+    <div id="p-insights"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">JARVIS ANALYSIS</div>
+    <div id="jarvis-output" style="text-align:center;padding:20px;">
+      <div class="stat-val green">—</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">CAREER STATS (2025)</div>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>YEAR</th>
+          <th>G</th>
+          <th>AB</th>
+          <th>R</th>
+          <th>H</th>
+          <th>AVG</th>
+          <th>HR</th>
+          <th>RBI</th>
+          <th>OPS</th>
+          <th>xWOBA</th>
+          <th>WAR</th>
+        </tr>
+      </thead>
+      <tbody id="p-career"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════════ -->
+<!-- PAGE: SCOUTING REPORTS -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════════ -->
+<div id="scouts" class="pg">
+  <div class="panel">
+    <div class="panel-title">SCOUTING REPORT</div>
+    <div id="scouting-content">
+      <div class="scout-section">
+        <div class="scout-title">Select a player to view scouting report</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">PROSPECT TOOLS</div>
+    <div id="prospect-tools">
+      <div style="text-align:center;padding:20px;color:var(--text-dim);">Select a player to view tools evaluation</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════════ -->
+<!-- PAGE: PITCH ARSENAL -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════════ -->
+<div id="arsenal" class="pg">
+  <div class="panel">
+    <div class="panel-title">PITCH MIX BREAKDOWN</div>
+    <div id="pitch-mix-visual" class="pitch-mix-grid"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">PITCH-BY-PITCH ARSENAL</div>
+    <div id="pitch-arsenal-cards"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">MOVEMENT PROFILE</div>
+    <div id="pitch-movement" class="metric-row">
+      <div style="text-align:center;width:100%;color:var(--text-dim);padding:20px;">Select a pitcher to view arsenal breakdown</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════════ -->
+<!-- PAGE: ADVANCED STATS -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════════ -->
+<div id="advanced" class="pg">
+  <div class="panel">
+    <div class="panel-title">EXIT VELOCITY & LAUNCH ANGLE</div>
+    <div class="velo-meter">
+      <div class="velo-label">AVG EV</div>
+      <div class="velo-bar"><div class="velo-fill" style="width:72%;"></div></div>
+      <div class="velo-val">92.4 mph</div>
+    </div>
+    <div class="velo-meter">
+      <div class="velo-label">MAX EV</div>
+      <div class="velo-bar"><div class="velo-fill" style="width:88%;"></div></div>
+      <div class="velo-val">114.2 mph</div>
+    </div>
+    <div class="velo-meter">
+      <div class="velo-label">LA SWEET</div>
+      <div class="velo-bar"><div class="velo-fill" style="width:65%;"></div></div>
+      <div class="velo-val">28.4°</div>
+    </div>
+    <div class="launch-chart">
+      <div class="launch-axis launch-x">Launch Angle</div>
+      <div class="launch-axis launch-y">Exit Velocity (mph)</div>
+      <div class="launch-points"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">SPLIT STATS (HOME/AWAY)</div>
+    <div class="split-row">
+      <div class="split-card">
+        <div class="split-title">🏟️ Home</div>
+        <div class="split-stat"><span class="split-label">AVG</span><span class="split-val">.312</span></div>
+        <div class="split-stat"><span class="split-label">OBP</span><span class="split-val">.389</span></div>
+        <div class="split-stat"><span class="split-label">SLG</span><span class="split-val">.584</span></div>
+        <div class="split-stat"><span class="split-label">OPS</span><span class="split-val">.973</span></div>
+        <div class="split-stat"><span class="split-label">HR</span><span class="split-val">31</span></div>
+        <div class="split-stat"><span class="split-label">RBI</span><span class="split-val">92</span></div>
+      </div>
+      <div class="split-card">
+        <div class="split-title">🚗 Away</div>
+        <div class="split-stat"><span class="split-label">AVG</span><span class="split-val">.291</span></div>
+        <div class="split-stat"><span class="split-label">OBP</span><span class="split-val">.365</span></div>
+        <div class="split-stat"><span class="split-label">SLG</span><span class="split-val">.521</span></div>
+        <div class="split-stat"><span class="split-label">OPS</span><span class="split-val">.886</span></div>
+        <div class="split-stat"><span class="split-label">HR</span><span class="split-val">23</span></div>
+        <div class="split-stat"><span class="split-label">RBI</span><span class="split-val">77</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">WAR BREAKDOWN & CONTRIBUTION</div>
+    <div class="war-breakdown">
+      <div class="war-component">
+        <div class="war-comp-label">Batting</div>
+        <div class="war-comp-val">5.2</div>
+        <div class="war-comp-bar"><div class="war-comp-fill" style="width:75%;"></div></div>
+      </div>
+      <div class="war-component">
+        <div class="war-comp-label">Baserunning</div>
+        <div class="war-comp-val">0.8</div>
+        <div class="war-comp-bar"><div class="war-comp-fill" style="width:40%;"></div></div>
+      </div>
+      <div class="war-component">
+        <div class="war-comp-label">Fielding</div>
+        <div class="war-comp-val">1.2</div>
+        <div class="war-comp-bar"><div class="war-comp-fill" style="width:55%;"></div></div>
+      </div>
+      <div class="war-component">
+        <div class="war-comp-label">Total WAR</div>
+        <div class="war-comp-val">7.2</div>
+        <div class="war-comp-bar"><div class="war-comp-fill" style="width:85%;"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">CONTACT QUALITY & BATTED BALL DATA</div>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>METRIC</th>
+          <th>VALUE</th>
+          <th>LEAGUE AVG</th>
+          <th>RANK</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Barrel %</td><td style="color:var(--green);">14.2%</td><td>6.1%</td><td style="color:var(--orange);">#12</td></tr>
+        <tr><td>Hard Hit %</td><td style="color:var(--green);">52.1%</td><td>33.8%</td><td style="color:var(--orange);">#8</td></tr>
+        <tr><td>Sweet Spot %</td><td style="color:var(--green);">40.3%</td><td>30.2%</td><td style="color:var(--orange);">#15</td></tr>
+        <tr><td>Solidly Hit %</td><td style="color:var(--green);">65.4%</td><td>52.1%</td><td style="color:var(--orange);">#6</td></tr>
+        <tr><td>Average Distance</td><td style="color:var(--green);">206 ft</td><td>187 ft</td><td style="color:var(--orange);">#22</td></tr>
+        <tr><td>LA Range</td><td style="color:var(--green);">-8° to 42°</td><td>-20° to 60°</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════════ -->
+<!-- PAGE: PLAYER COMPARISON -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════════ -->
+<div id="compare" class="pg">
+  <div class="panel">
+    <div class="panel-title">HEAD-TO-HEAD COMPARISON</div>
+    <div style="margin-bottom:16px;">
+      <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:6px;">Compare with:</label>
+      <select id="compare-select" style="background:rgba(13,28,58,.8);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#fff;padding:8px 12px;font-family:'Barlow Condensed',sans-serif;font-size:12px;width:200px;cursor:pointer;" onchange="runComparison()">
+        <option value="">Select player to compare</option>
+      </select>
+    </div>
+    <div id="comparison-output" class="compare-grid"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">PEER COMPARISONS (Similar Players)</div>
+    <div class="peer-comp">
+      <div class="peer-comp-title">Career Arc Comparables</div>
+      <div class="peer-comp-row">
+        <div class="peer-rank">1</div>
+        <div class="peer-name">Mookie Betts</div>
+        <div class="peer-comp-val">92% Match</div>
+      </div>
+      <div class="peer-comp-row">
+        <div class="peer-rank">2</div>
+        <div class="peer-name">Juan Soto</div>
+        <div class="peer-comp-val">88% Match</div>
+      </div>
+      <div class="peer-comp-row">
+        <div class="peer-rank">3</div>
+        <div class="peer-name">Kyle Schwarber</div>
+        <div class="peer-comp-val">84% Match</div>
+      </div>
+      <div class="peer-comp-row">
+        <div class="peer-rank">4</div>
+        <div class="peer-name">Fernando Tatis Jr.</div>
+        <div class="peer-comp-val">81% Match</div>
+      </div>
+      <div class="peer-comp-row">
+        <div class="peer-rank">5</div>
+        <div class="peer-name">Vladimir Guerrero Jr.</div>
+        <div class="peer-comp-val">79% Match</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">TRADE VALUE ESTIMATE</div>
+    <div class="trade-card">
+      <div class="trade-label">Estimated Trade Value</div>
+      <div class="trade-val">8.6</div>
+      <div class="trade-meta">7+ Year Contract Worth in WAR</div>
+    </div>
+    <table class="tbl" style="margin-top:12px;">
+      <thead>
+        <tr><th>SCENARIO</th><th>RETURN VALUE</th><th>CONFIDENCE</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Stay on current team</td><td style="color:var(--gold);">+$12.8M surplus</td><td style="color:var(--green);">85%</td></tr>
+        <tr><td>Contending team trade</td><td style="color:var(--green);">+$8.2M surplus</td><td style="color:var(--green);">72%</td></tr>
+        <tr><td>Free agent market</td><td style="color:var(--orange);">$48.5M / 5yr</td><td style="color:var(--orange);">60%</td></tr>
+        <tr><td>Long-term extension</td><td style="color:var(--blue-bright);">$62M / 6yr</td><td style="color:var(--green);">78%</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════════ -->
+<!-- PAGE: HEALTH & TRENDS -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════════ -->
+<div id="health" class="pg">
+  <div class="panel">
+    <div class="panel-title">INJURY STATUS & TIMELINE</div>
+    <div id="injury-status" style="margin-bottom:16px;">
+      <div style="padding:16px;background:rgba(77,206,138,.08);border-left:3px solid var(--green);border-radius:4px;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--green);margin-bottom:4px;">✓ ACTIVE & HEALTHY</div>
+        <div style="font-size:10px;color:var(--text-dim);">Last appearance: TODAY</div>
+      </div>
+    </div>
+
+    <div class="sec-title">Performance Timeline</div>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-label">RECENT INJURY</div>
+        <div class="timeline-date">October 12, 2024</div>
+        <div class="timeline-content">Right hamstring strain (mild) - Missed 2 games, returned same series</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-label">SURGERY</div>
+        <div class="timeline-date">January 8, 2024</div>
+        <div class="timeline-content">Off-season maintenance: Right shoulder arthroscopy. Full recovery by Spring Training</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-label">MILESTONE</div>
+        <div class="timeline-date">May 20, 2024</div>
+        <div class="timeline-content">1,000th career hit. Achieved in 4 seasons, 2,156 plate appearances</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">PERFORMANCE TRENDS (2025 SEASON)</div>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>MONTH</th>
+          <th>AVG</th>
+          <th>HR</th>
+          <th>OPS</th>
+          <th>xWOBA</th>
+          <th>TREND</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="color:var(--orange);">March</td><td>.298</td><td>6</td><td>.921</td><td>.372</td><td style="color:var(--orange);">→</td></tr>
+        <tr><td style="color:var(--green);">April</td><td>.315</td><td>8</td><td>.974</td><td>.388</td><td style="color:var(--green);">↗</td></tr>
+        <tr><td style="color:var(--green);">May</td><td>.321</td><td>11</td><td>1.052</td><td>.412</td><td style="color:var(--green);">↗</td></tr>
+        <tr><td style="color:var(--green);">June</td><td>.318</td><td>13</td><td>1.028</td><td>.401</td><td style="color:var(--orange);">→</td></tr>
+        <tr><td style="color:var(--orange);">July</td><td>.304</td><td>10</td><td>.961</td><td>.382</td><td style="color:var(--blue-bright);">↘</td></tr>
+        <tr><td style="color:var(--green);">August</td><td>.312</td><td>12</td><td>.998</td><td>.395</td><td style="color:var(--green);">↗</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">WORKLOAD & REST ANALYSIS</div>
+    <div class="metric-row">
+      <div class="metric-label">Games Played</div>
+      <div class="metric-bar"><div class="metric-fill" style="width:88%;background:var(--green);"></div></div>
+      <div class="metric-pct" style="color:var(--green);">142/162</div>
+    </div>
+    <div class="metric-row">
+      <div class="metric-label">Plate Appearances</div>
+      <div class="metric-bar"><div class="metric-fill" style="width:92%;background:var(--green);"></div></div>
+      <div class="metric-pct" style="color:var(--green);">598/650</div>
+    </div>
+    <div class="metric-row">
+      <div class="metric-label">Days Rest (Avg)</div>
+      <div class="metric-bar"><div class="metric-fill" style="width:35%;background:var(--orange);"></div></div>
+      <div class="metric-pct" style="color:var(--orange);">1.2 days</div>
+    </div>
+    <div class="metric-row">
+      <div class="metric-label">Off-days Utilized</div>
+      <div class="metric-bar"><div class="metric-fill" style="width:62%;background:var(--gold);"></div></div>
+      <div class="metric-pct" style="color:var(--gold);">18/23</div>
+    </div>
+    <div class="metric-row">
+      <div class="metric-label">Injury Risk Index</div>
+      <div class="metric-bar"><div class="metric-fill" style="width:24%;background:var(--green);"></div></div>
+      <div class="metric-pct" style="color:var(--green);">LOW</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">NEXT MILESTONES & PROJECTIONS</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">
+      <div style="background:rgba(232,114,42,.1);border:1px solid rgba(232,114,42,.3);border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--text-dim);margin-bottom:6px;">NEXT MILESTONE</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--orange);">1,100 Hits</div>
+        <div style="font-size:9px;color:var(--text-dim);margin-top:4px;">42 games away</div>
+      </div>
+      <div style="background:rgba(77,206,138,.1);border:1px solid rgba(77,206,138,.3);border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--text-dim);margin-bottom:6px;">2025 PROJECTION</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--green);">.310 AVG</div>
+        <div style="font-size:9px;color:var(--text-dim);margin-top:4px;">44 HR pace</div>
+      </div>
+      <div style="background:rgba(90,180,245,.1);border:1px solid rgba(90,180,245,.3);border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--text-dim);margin-bottom:6px;">2025 WAR PACE</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--blue-bright);">8.2</div>
+        <div style="font-size:9px;color:var(--text-dim);margin-top:4px;">Star caliber</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════════ -->
+<!-- PAGE: GAME LOG -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════════ -->
+<div id="gamelog" class="pg">
+  <div class="panel">
+    <div class="panel-title">2025 GAME-BY-GAME LOG (Last 15 Games)</div>
+    <div class="game-log-header">
+      <div>DATE</div>
+      <div>OPPONENT</div>
+      <div>RESULT</div>
+      <div>AB</div>
+      <div>H</div>
+      <div>RBI</div>
+    </div>
+    <div id="game-log-rows"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">RECENT STREAKS</div>
+    <div class="grid-2">
+      <div class="streak-card">
+        <div class="streak-title">🔥 Current Hitting Streak</div>
+        <div class="streak-val">7 Games</div>
+        <div class="streak-desc">12 hits in last 7 games | .571 AVG</div>
+        <div class="streak-meta">Last game: 2-for-4 with 1 HR</div>
+      </div>
+      <div class="streak-card">
+        <div class="streak-title">⭐ Multi-Hit Games</div>
+        <div class="streak-val">8 of 15</div>
+        <div class="streak-desc">53.3% of games in last 15</div>
+        <div class="streak-meta">League average: 38.2%</div>
+      </div>
+      <div class="streak-card">
+        <div class="streak-title">💣 Home Run Streak</div>
+        <div class="streak-val">3 Games</div>
+        <div class="streak-desc">HRs in 3 consecutive games</div>
+        <div class="streak-meta">Total: 4 HRs in streak</div>
+      </div>
+      <div class="streak-card">
+        <div class="streak-title">🚫 Strikeout Streak</div>
+        <div class="streak-val">2 Games</div>
+        <div class="streak-desc">Only 1 K in last 2 games</div>
+        <div class="streak-meta">Last 15 games: 8 K total</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">HOT/COLD ANALYSIS (Last 30 Days)</div>
+    <div class="grid-2">
+      <div class="stat-box">
+        <div class="stat-box-row">
+          <span class="stat-box-label">HOT ZONE (Right-Center)</span>
+          <span style="display:flex;align-items:center;">
+            <span class="stat-box-val">.385</span>
+            <span class="rank-badge elite">ELITE</span>
+          </span>
+        </div>
+        <div class="stat-box-row">
+          <span class="stat-box-label">Opposite Field</span>
+          <span style="display:flex;align-items:center;">
+            <span class="stat-box-val">.248</span>
+            <span class="rank-badge below">BELOW</span>
+          </span>
+        </div>
+        <div class="stat-box-row">
+          <span class="stat-box-label">Middle-In</span>
+          <span style="display:flex;align-items:center;">
+            <span class="stat-box-val">.342</span>
+            <span class="rank-badge above">ABOVE</span>
+          </span>
+        </div>
+      </div>
+      <div style="background:rgba(7,16,45,.88);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px;">HITTING ZONES</div>
+        <div class="heatmap-grid">
+          <div class="heatmap-cell cold" style="font-size:10px;">.210</div>
+          <div class="heatmap-cell warm" style="font-size:10px;">.302</div>
+          <div class="heatmap-cell hot" style="font-size:10px;">.358</div>
+          <div class="heatmap-cell cool" style="font-size:10px;">.268</div>
+          <div class="heatmap-cell hot" style="font-size:10px;">.385</div>
+          <div class="heatmap-cell cool" style="font-size:10px;">.275</div>
+          <div class="heatmap-cell cold" style="font-size:10px;">.195</div>
+          <div class="heatmap-cell warm" style="font-size:10px;">.298</div>
+          <div class="heatmap-cell cool" style="font-size:10px;">.242</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════════ -->
+<!-- PAGE: SPLITS & STREAKS -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════════ -->
+<div id="splits" class="pg">
+  <div class="panel">
+    <div class="panel-title">ADVANCED SPLITS ANALYSIS</div>
+    <div class="grid-2">
+      <div class="stat-box">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--orange);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;">VS RHP</div>
+        <div class="stat-box-row">
+          <span class="stat-box-label">AVG</span>
+          <span class="stat-box-val">.305</span>
+        </div>
+        <div class="stat-box-row">
+          <span class="stat-box-label">OBP</span>
+          <span class="stat-box-val">.388</span>
+        </div>
+        <div class="stat-box-row">
+          <span class="stat-box-label">SLG</span>
+          <span class="stat-box-val">.564</span>
+        </div>
+        <div class="stat-box-row">
+          <span class="stat-box-label">OPS</span>
+          <span class="stat-box-val">.952</span>
+        </div>
+        <div class="stat-box-row">
+          <span class="stat-box-label">wRC+</span>
+          <span class="stat-box-val">142</span>
+        </div>
+      </div>
+      <div class="stat-box">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--blue-bright);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;">VS LHP</div>
+        <div class="stat-box-row">
+          <span class="stat-box-label">AVG</span>
+          <span class="stat-box-val">.278</span>
+        </div>
+        <div class="stat-box-row">
+          <span class="stat-box-label">OBP</span>
+          <span class="stat-box-val">.352</span>
+        </div>
+        <div class="stat-box-row">
+          <span class="stat-box-label">SLG</span>
+          <span class="stat-box-val">.487</span>
+        </div>
+        <div class="stat-box-row">
+          <span class="stat-box-label">OPS</span>
+          <span class="stat-box-val">.839</span>
+        </div>
+        <div class="stat-box-row">
+          <span class="stat-box-label">wRC+</span>
+          <span class="stat-box-val">118</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">TIME-BASED SPLITS</div>
+    <table class="tbl">
+      <thead>
+        <tr><th>SPLIT</th><th>AB</th><th>AVG</th><th>OBP</th><th>SLG</th><th>OPS</th><th>HR</th></tr>
+      </thead>
+      <tbody>
+        <tr><td style="color:var(--orange);">First Pitch</td><td>142</td><td>.328</td><td>.401</td><td>.612</td><td>1.013</td><td>11</td></tr>
+        <tr><td style="color:var(--gold);">Behind Count</td><td>98</td><td>.245</td><td>.312</td><td>.418</td><td>.730</td><td>6</td></tr>
+        <tr><td style="color:var(--green);">Ahead Count</td><td>168</td><td>.345</td><td>.456</td><td>.654</td><td>1.110</td><td>18</td></tr>
+        <tr><td style="color:var(--blue-bright);">High Leverage</td><td>64</td><td>.302</td><td>.389</td><td>.541</td><td>.930</td><td>7</td></tr>
+        <tr><td style="color:var(--text-dim);">Leading Off</td><td>124</td><td>.315</td><td>.412</td><td>.596</td><td>1.008</td><td>9</td></tr>
+        <tr><td style="color:var(--text-dim);">Two Outs</td><td>142</td><td>.289</td><td>.345</td><td>.501</td><td>.846</td><td>8</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">PITCH TYPE PERFORMANCE</div>
+    <table class="tbl">
+      <thead>
+        <tr><th>PITCH</th><th>AGAINST</th><th>AVG</th><th>SLG</th><th>xWOBA</th><th>WHIFF %</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>🔥 Fastball</td><td>144</td><td style="color:var(--green);">.341</td><td style="color:var(--green);">.612</td><td style="color:var(--green);">.398</td><td style="color:var(--blue-bright);">8.2%</td></tr>
+        <tr><td>⛩️ Slider</td><td>96</td><td style="color:var(--gold);">.281</td><td style="color:var(--gold);">.489</td><td style="color:var(--gold);">.341</td><td style="color:var(--orange);">18.4%</td></tr>
+        <tr><td>🌀 Changeup</td><td>72</td><td style="color:var(--text-dim);">.264</td><td style="color:var(--text-dim);">.421</td><td style="color:var(--text-dim);">.318</td><td style="color:var(--red);">24.1%</td></tr>
+        <tr><td>🎯 Curveball</td><td>48</td><td style="color:var(--blue-bright);">.238</td><td style="color:var(--blue-bright);">.381</td><td style="color:var(--blue-bright);">.289</td><td style="color:var(--red);">29.8%</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════════ -->
+<!-- PAGE: ACHIEVEMENTS & AWARDS -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════════ -->
+<div id="achievements" class="pg">
+  <div class="panel">
+    <div class="panel-title">CAREER ACHIEVEMENTS & AWARDS</div>
+    <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:20px 0;">
+      <div class="achievement">
+        <div class="achievement-icon">⭐</div>
+        <div class="achievement-title">4x All-Star</div>
+      </div>
+      <div class="achievement">
+        <div class="achievement-icon">🏆</div>
+        <div class="achievement-title">2x Gold Glove</div>
+      </div>
+      <div class="achievement">
+        <div class="achievement-icon">👑</div>
+        <div class="achievement-title">MVP Voting</div>
+      </div>
+      <div class="achievement">
+        <div class="achievement-icon">💎</div>
+        <div class="achievement-title">1000 Hits</div>
+      </div>
+      <div class="achievement">
+        <div class="achievement-icon">🎯</div>
+        <div class="achievement-title">Silver Slugger</div>
+      </div>
+      <div class="achievement">
+        <div class="achievement-icon">🔥</div>
+        <div class="achievement-title">50+ HR Club</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">2025 SEASON MILESTONES</div>
+    <table class="tbl">
+      <thead>
+        <tr><th>MILESTONE</th><th>PROGRESS</th><th>TARGET</th><th>ETA</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Home Runs</td>
+          <td style="color:var(--green);">54 HR</td>
+          <td style="color:var(--text-dim);">60 HR (Career High)</td>
+          <td style="color:var(--orange);">6 games</td>
+        </tr>
+        <tr>
+          <td>RBI Milestone</td>
+          <td style="color:var(--green);">128 RBI</td>
+          <td style="color:var(--text-dim);">150 RBI</td>
+          <td style="color:var(--orange);">Last 20 games</td>
+        </tr>
+        <tr>
+          <td>Hits This Year</td>
+          <td style="color:var(--green);">162 H</td>
+          <td style="color:var(--text-dim);">200 H Milestone</td>
+          <td style="color:var(--orange);">Final month</td>
+        </tr>
+        <tr>
+          <td>Career Hits</td>
+          <td style="color:var(--green);">1,098 H</td>
+          <td style="color:var(--text-dim);">1,200 Career Hits</td>
+          <td style="color:var(--orange);">2026-2027</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">STATISTICAL RANKINGS (2025 Season)</div>
+    <div class="grid-3">
+      <div style="background:rgba(7,16,45,.88);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px;text-align:center;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;">AVG Ranking</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--green);">#4</div>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:4px;">.310 AVG</div>
+      </div>
+      <div style="background:rgba(7,16,45,.88);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px;text-align:center;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;">HR Ranking</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--orange);">#8</div>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:4px;">54 Home Runs</div>
+      </div>
+      <div style="background:rgba(7,16,45,.88);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px;text-align:center;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;">WAR Ranking</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);">#2</div>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:4px;">7.8 WAR</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">HISTORICAL COMPARISONS</div>
+    <table class="tbl">
+      <thead>
+        <tr><th>STAT</th><th>YOUR PLAYER</th><th>ALL-TIME RANK</th><th>COMPARISON</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="color:var(--orange);">Career WAR</td>
+          <td>27.3 WAR</td>
+          <td>#156 All-Time</td>
+          <td>Behind Stan Musial (331.5)</td>
+        </tr>
+        <tr>
+          <td style="color:var(--gold);">Career HR</td>
+          <td>312 HR</td>
+          <td>#142 All-Time</td>
+          <td>Behind Mickey Mantle (536)</td>
+        </tr>
+        <tr>
+          <td style="color:var(--green);">Career Hits</td>
+          <td>1,098 H</td>
+          <td>#89 All-Time</td>
+          <td>Behind Ty Cobb (4,191)</td>
+        </tr>
+        <tr>
+          <td style="color:var(--blue-bright);">Career AVG</td>
+          <td>.298 AVG</td>
+          <td>#67 All-Time</td>
+          <td>Behind Ted Williams (.344)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</div>
+
+<!-- SCRIPT -->
+<script>
+// ─── DATA ─────────────────────────────────────────────────────────────────────
+
+const LEAGUE = {
+  avgMean: .270,
+  opsMean: .755,
+  xwobaMean: .330,
+  eraAvg: 4.02,
+  whipAvg: 1.15
+};
+
+const TEAMS = {
+  'SF': {
+    name: 'San Francisco Giants',
+    abbr: 'SF',
+    color: '#FF6D00',
+    players: [
+      {name:'Tyler Megill', pos:'RHP', g:32, ab:0, r:0, h:0, avg:.000, hr:0, rbi:0, ops:.000, xwoba:.000, war:2.4, era:3.28, w:12, l:6, ip:186, k:189, bb:48, whip:1.09, fip:3.11},
+      {name:'Marco Luciano', pos:'OF/DH', g:128, ab:428, r:61, h:112, avg:.262, hr:24, rbi:68, ops:.812, xwoba:.352, war:2.8, era:0, w:0, l:0, ip:0, k:0, bb:0, whip:0, fip:0},
+      {name:'Matt Chapman', pos:'3B', g:144, ab:562, r:89, h:164, avg:.292, hr:28, rbi:92, ops:.891, xwoba:.374, war:5.1, era:0, w:0, l:0, ip:0, k:0, bb:0, whip:0, fip:0},
+      {name:'Bryce Eldridge', pos:'1B', g:140, ab:532, r:78, h:135, avg:.254, hr:31, rbi:88, ops:.818, xwoba:.339, war:3.4, era:0, w:0, l:0, ip:0, k:0, bb:0, whip:0, fip:0},
+    ]
+  },
+  'LAD': {
+    name: 'Los Angeles Dodgers',
+    abbr: 'LAD',
+    color: '#005A9C',
+    players: [
+      {name:'Shohei Ohtani', pos:'DH', g:156, ab:598, r:124, h:182, avg:.304, hr:54, rbi:130, ops:1.032, xwoba:.408, war:9.2, era:0, w:0, l:0, ip:0, k:0, bb:0, whip:0, fip:0},
+      {name:'Freddie Freeman', pos:'1B', g:148, ab:612, r:96, h:189, avg:.309, hr:22, rbi:88, ops:.923, xwoba:.372, war:6.1, era:0, w:0, l:0, ip:0, k:0, bb:0, whip:0, fip:0},
+      {name:'Mookie Betts', pos:'RF', g:150, ab:595, r:114, h:178, avg:.299, hr:31, rbi:95, ops:.961, xwoba:.388, war:7.3, era:0, w:0, l:0, ip:0, k:0, bb:0, whip:0, fip:0},
+    ]
+  },
+  'NYY': {
+    name: 'New York Yankees',
+    abbr: 'NYY',
+    color: '#0C2C56',
+    players: [
+      {name:'Aaron Judge', pos:'RF', g:148, ab:596, r:128, h:187, avg:.314, hr:58, rbi:144, ops:1.064, xwoba:.421, war:9.8, era:0, w:0, l:0, ip:0, k:0, bb:0, whip:0, fip:0},
+      {name:'Juan Soto', pos:'LF', g:145, ab:542, r:118, h:162, avg:.299, hr:41, rbi:109, ops:.982, xwoba:.396, war:8.2, era:0, w:0, l:0, ip:0, k:0, bb:0, whip:0, fip:0},
+      {name:'Giancarlo Stanton', pos:'DH', g:124, ab:468, r:82, h:128, avg:.274, hr:44, rbi:105, ops:.921, xwoba:.368, war:5.6, era:0, w:0, l:0, ip:0, k:0, bb:0, whip:0, fip:0},
+    ]
+  },
+};
+
+let currentTeam = null;
+
+// ─── UI FUNCTIONS ─────────────────────────────────────────────────────────────
+
+function switchTab(pageId, elem) {
+  document.querySelectorAll('.pg').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.getElementById(pageId).classList.add('on');
+  elem.classList.add('on');
+}
+
+function onTeamChange() {
+  const code = document.getElementById('team-select').value;
+  if(!code) return;
+  currentTeam = TEAMS[code];
+  loadTeamData();
+}
+
+function loadAllProspects() {
+  const opts = Object.entries(TEAMS).map(([code, team]) => 
+    `<option value="${code}">${team.name}</option>`
+  ).join('');
+  document.getElementById('team-select').innerHTML = '<option value="">SELECT TEAM...</option>' + opts;
+  
+  // Load league dashboard
+  const allHitters = Object.values(TEAMS).flatMap(t => t.players.filter(p => p.pos !== 'RHP' && p.pos !== 'SP' && p.pos !== 'RP'));
+  allHitters.sort((a,b) => b.war - a.war);
+  
+  const allPitchers = Object.values(TEAMS).flatMap(t => t.players.filter(p => p.era > 0));
+  allPitchers.sort((a,b) => a.era - b.era);
+  
+  const renderLeader = (p, isHitter) => `
+    <div class="leader-row" onclick="searchPlayer('${p.name}')">
+      <div class="leader-rank">${isHitter ? '★' : '★'}</div>
+      <div class="leader-avatar"><div class="av-initials">${p.name.split(' ').map(w=>w[0]).join('')}</div></div>
+      <div class="leader-info">
+        <div class="leader-first">${p.pos}</div>
+        <div class="leader-last">${p.name}</div>
+      </div>
+      <div class="leader-val" style="text-align:right;">${isHitter ? p.war.toFixed(1) + ' WAR' : (p.era.toFixed(2) + ' ERA')}</div>
+    </div>`;
+  
+  document.getElementById('batting-leaders').innerHTML = allHitters.slice(0,5).map(p => renderLeader(p, true)).join('');
+  document.getElementById('pitching-leaders').innerHTML = allPitchers.slice(0,5).map(p => renderLeader(p, false)).join('');
+}
+
+function loadTeamData() {
+  if(!currentTeam) return;
+  
+  const hitters = currentTeam.players.filter(p => p.avg > 0);
+  const pitchers = currentTeam.players.filter(p => p.era > 0);
+  
+  document.getElementById('team-batting').innerHTML = hitters.map(p => `
+    <tr onclick="viewPlayer('${p.name}')">
+      <td><strong>${p.name}</strong></td>
+      <td>${p.pos}</td>
+      <td style="color:var(--green);">${p.avg.toFixed(3)}</td>
+      <td style="color:var(--orange);">${p.hr}</td>
+      <td>${p.rbi}</td>
+      <td>${p.ops.toFixed(3)}</td>
+      <td style="color:var(--blue-bright);">${p.xwoba.toFixed(3)}</td>
+      <td style="color:var(--gold);">${p.war.toFixed(1)}</td>
+    </tr>
+  `).join('');
+  
+  document.getElementById('team-pitching').innerHTML = pitchers.map(p => `
+    <tr>
+      <td><strong>${p.name}</strong></td>
+      <td style="color:var(--red);">${p.era.toFixed(2)}</td>
+      <td>${p.w}-${p.l}</td>
+      <td>${p.ip}</td>
+      <td style="color:var(--green);">${p.k}</td>
+      <td>${p.bb}</td>
+      <td>${p.whip.toFixed(2)}</td>
+      <td>${p.fip.toFixed(2)}</td>
+    </tr>
+  `).join('');
+  
+  const totRuns = hitters.reduce((s,p) => s + p.r, 0);
+  const totHits = hitters.reduce((s,p) => s + p.h, 0);
+  const totHR = hitters.reduce((s,p) => s + p.hr, 0);
+  const avgERA = pitchers.length ? (pitchers.reduce((s,p) => s + p.era, 0) / pitchers.length) : 0;
+  const totK = pitchers.reduce((s,p) => s + p.k, 0);
+  const totWL = pitchers.reduce((s,p) => [s[0]+p.w, s[1]+p.l], [0,0]);
+  
+  document.getElementById('team-runs').textContent = totRuns;
+  document.getElementById('team-hits').textContent = totHits;
+  document.getElementById('team-hr').textContent = totHR;
+  document.getElementById('team-era').textContent = avgERA.toFixed(2);
+  document.getElementById('team-k').textContent = totK;
+  document.getElementById('team-wl').textContent = `${totWL[0]}-${totWL[1]}`;
+}
+
+function viewPlayer(name) {
+  let p = null;
+  for(const [code, team] of Object.entries(TEAMS)) {
+    const found = team.players.find(x => x.name === name);
+    if(found) {
+      p = found;
+      document.getElementById('team-select').value = code;
+      currentTeam = team;
+      break;
+    }
+  }
+  if(!p) return;
+  
+  loadTeamData();
+  
+  document.getElementById('p-name').textContent = p.name;
+  document.getElementById('p-meta').textContent = `${p.pos} · ${currentTeam.name} · ${p.g}G | ${p.ab}AB`;
+  document.getElementById('p-rating').textContent = Math.round(Math.max(50, Math.min(99, 50 + (p.avg - LEAGUE.avgMean)*200 + (p.war - 2)*8)));
+  
+  // Percentile bars
+  const pctMetrics = [
+    {label:'AVG', val:p.avg, mean:LEAGUE.avgMean, max:.380},
+    {label:'OPS', val:p.ops, mean:LEAGUE.opsMean, max:1.05},
+    {label:'xwOBA', val:p.xwoba, mean:LEAGUE.xwobaMean, max:.450},
+    {label:'HR/G', val:p.g ? p.hr/p.g : 0, mean:.15, max:.45},
+    {label:'WAR', val:p.war, mean:2.0, max:10}
+  ];
+  document.getElementById('p-percentiles').innerHTML = pctMetrics.map(m => {
+    const pct = Math.round(Math.min(99, Math.max(1, (m.val / m.max) * 100)));
+    const col = pct >= 80 ? 'var(--green)' : pct >= 60 ? 'var(--gold)' : pct >= 40 ? 'var(--text-dim)' : 'var(--blue-bright)';
+    return `<div class="pct-row">
+      <div class="pct-label">${m.label}</div>
+      <div class="pct-track" style="overflow:hidden;">
+        <div class="pct-fill" style="width:${pct}%;background:${col};"></div>
+      </div>
+      <div class="pct-val" style="color:${col}">${pct}</div>
+    </div>`;
+  }).join('');
+  
+  // Metrics
+  const offMetrics = [
+    {label:'AVG', val:p.avg, max:.360, col:'var(--green)'},
+    {label:'OPS', val:p.ops, max:1.0, col:'var(--orange)'},
+    {label:'xwOBA', val:p.xwoba, max:.430, col:'var(--blue-bright)'}
+  ];
+  document.getElementById('p-metrics').innerHTML = offMetrics.map(m =>
+    `<div class="metric-row">
+      <div class="metric-label">${m.label}</div>
+      <div class="metric-bar"><div class="metric-fill" style="width:${Math.min(100,(m.val/m.max)*100).toFixed(1)}%;background:${m.col};"></div></div>
+      <div class="metric-pct" style="color:${m.col}">${m.val.toFixed(3)}</div>
+    </div>`
+  ).join('');
+  
+  // Insights
+  let ins = '';
+  if(p.avg > .290) ins += `<div class="insight-box">✓ Elite contact rate — top-tier batting average</div>`;
+  if(p.hr > 35) ins += `<div class="insight-box">✓ Premium power output — 35+ HR pace</div>`;
+  if(p.xwoba > .380) ins += `<div class="insight-box">✓ Elite expected hitting quality (xwOBA)</div>`;
+  if(p.war >= 6) ins += `<div class="insight-box">✓ MVP-caliber WAR — franchise cornerstone</div>`;
+  if(p.ops < .720) ins += `<div class="insight-box insight-warn">⚠ Below-average OPS — efficiency concern</div>`;
+  if(p.xwoba < .320) ins += `<div class="insight-box insight-bad">⚠ Below-average expected production</div>`;
+  if(!ins) ins = '<div class="insight-box">• Balanced offensive profile — solid contributor</div>';
+  document.getElementById('p-insights').innerHTML = ins;
+  
+  // JARVIS
+  const score = Math.round(50 + (p.avg - LEAGUE.avgMean)*200 + (p.ops - LEAGUE.opsMean)*60 + (p.xwoba - LEAGUE.xwobaMean)*150 + (p.war - 2)*4);
+  const clamped = Math.max(0, Math.min(100, score));
+  const grade = clamped>=88?'ELITE (A+)':clamped>=78?'EXCELLENT (A)':clamped>=66?'GOOD (B+)':clamped>=55?'AVERAGE (C)':'BELOW AVG (D)';
+  const color = clamped>=88?'var(--green)':clamped>=78?'var(--gold)':clamped>=55?'var(--text-dim)':'var(--red)';
+  const risk = clamped>=80?'LOW':clamped>=60?'MEDIUM':'HIGH';
+  const summary = clamped>=88?`${p.name} is an elite impact player. All-Star caliber production with high confidence projection.`
+    :clamped>=78?`${p.name} is an excellent contributor. Above-average across all metrics with strong floor.`
+    :clamped>=66?`${p.name} is a quality starter. Solid production with room for upside.`
+    :clamped>=55?`${p.name} is a league-average player. Consistent but limited ceiling.`
+    :`${p.name} is below expectations. Monitoring recommended, potential roster risk.`;
+  
+  document.getElementById('jarvis-output').innerHTML = `
+    <div class="stat-val" style="color:${color}">${grade}</div>
+    <div style="margin-top:8px;font-size:11px;color:var(--text-dim);">Score: ${clamped}/100 · Risk: ${risk}</div>
+    <div style="margin-top:12px;padding:12px;background:rgba(255,255,255,.03);border-radius:8px;border-left:3px solid ${color};font-size:11px;line-height:1.5;">${summary}</div>
+  `;
+  
+  // Career stats
+  document.getElementById('p-career').innerHTML = `
+    <tr>
+      <td style="color:var(--orange)">2025</td>
+      <td>${p.g}</td>
+      <td>${p.ab}</td>
+      <td>${p.r}</td>
+      <td>${p.h}</td>
+      <td>${p.avg.toFixed(3)}</td>
+      <td>${p.hr}</td>
+      <td>${p.rbi}</td>
+      <td>${p.ops.toFixed(3)}</td>
+      <td>${p.xwoba.toFixed(3)}</td>
+      <td style="color:var(--gold)">${p.war.toFixed(1)}</td>
+    </tr>`;
+  
+  // Heatmap (simulated zone data)
+  const zones = {ul:3,um:6,ur:8,ml:7,mm:14,mr:10,ll:5,lm:8,lr:6};
+  Object.entries(zones).forEach(([z,v]) => document.getElementById(`zone-${z}`).textContent = v);
+  
+  // Scouting
+  const scouts = [
+    {title:'Hit Tool', desc:'Advanced bat control with plus contact skills. Consistently barrel ball to all fields.', grade:78},
+    {title:'Power', desc:'Above-average raw power with good plate discipline. 30+ HR potential annually.', grade:72},
+    {title:'Run Speed', desc:'Below-average speed. Plays station-to-station. Limited baserunning value.', grade:45},
+    {title:'Arm Strength', desc:'Strong defensive arm from outfield. Plus accuracy on throws to bases.', grade:68},
+    {title:'Fielding', desc:'Gold Glove candidate. Excellent range and footwork in position. High-IQ defender.', grade:85},
+  ];
+  
+  document.getElementById('scouting-content').innerHTML = scouts.map(s => `
+    <div class="scout-section">
+      <div class="scout-title">${s.title}</div>
+      <div class="scout-desc">${s.desc}</div>
+      <div class="scout-grade">
+        <div class="grade-label">Grade</div>
+        <div class="grade-bar"><div class="grade-fill" style="width:${s.grade}%;"></div></div>
+        <div class="grade-val">${s.grade}/80</div>
+      </div>
+    </div>
+  `).join('');
+  
+  // Prospect tools
+  const tools = [
+    'Advanced contract & long-term value',
+    'Surplus value projection: +$8.6M',
+    'Extension eligible: 2026, 2027, 2028',
+    'Free agent: 2031',
+    'MiLB rank: #18 overall'
+  ];
+  document.getElementById('prospect-tools').innerHTML = tools.map(t => 
+    `<div class="insight-box" style="border-left-color:var(--orange);">• ${t}</div>`
+  ).join('');
+  
+  // Pitch arsenal (for pitchers)
+  if(p.era > 0) {
+    const pitches = [
+      {name:'Four-Seam FB', icon:'🔥', usage:42, velo:97.2},
+      {name:'Slider', icon:'⛩️', usage:28, velo:89.1},
+      {name:'Changeup', icon:'🌀', usage:18, velo:84.3},
+      {name:'Curveball', icon:'🎯', usage:12, velo:81.6}
+    ];
+    document.getElementById('pitch-mix-visual').innerHTML = pitches.map(p => `
+      <div class="pitch-mix-card">
+        <div class="pitch-mix-icon">${p.icon}</div>
+        <div class="pitch-mix-name">${p.name}</div>
+        <div class="pitch-mix-pct">${p.usage}%</div>
+        <div class="pitch-mix-vel">${p.velo} mph</div>
+      </div>
+    `).join('');
+    
+    document.getElementById('pitch-arsenal-cards').innerHTML = pitches.map(p => `
+      <div class="pitch-card">
+        <div class="pitch-name">${p.icon} ${p.name} <span style="font-size:10px;color:var(--text-dim);">${p.usage}% usage</span></div>
+        <div class="pitch-stat"><span>Velocity:</span><span class="pitch-stat-val">${p.velo} mph</span></div>
+        <div class="pitch-stat"><span>Spin Rate:</span><span class="pitch-stat-val">2,400 rpm</span></div>
+        <div class="pitch-stat"><span>Break:</span><span class="pitch-stat-val">+14\" IVB</span></div>
+        <div class="pitch-stat"><span>Whiff %:</span><span class="pitch-stat-val">32.1%</span></div>
+      </div>
+    `).join('');
+  }
+  
+  switchTab('player', document.querySelectorAll('.tab')[2]);
+}
+
+function searchPlayer() {
+  const q = (document.getElementById('search-input').value || '').trim().toLowerCase();
+  if(!q) return;
+  for(const [code, team] of Object.entries(TEAMS)) {
+    const found = team.players.find(p => p.name.toLowerCase().includes(q));
+    if(found) {
+      document.getElementById('team-select').value = code;
+      currentTeam = team;
+      loadTeamData();
+      viewPlayer(found.name);
+      return;
+    }
+  }
+  alert(`No player found matching "${q}"`);
+}
+
+function refreshData() {
+  if(currentTeam) loadTeamData();
+}
+
+function buildCompareDropdown() {
+  const allPlayers = Object.values(TEAMS).flatMap(t => t.players).filter(p => p.avg > 0);
+  const opts = allPlayers.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+  const sel = document.getElementById('compare-select');
+  if(sel) sel.innerHTML = '<option value="">Select player to compare</option>' + opts;
+}
+
+function generateGameLog() {
+  const games = [
+    {date:'9/28/2025', opp:'@LAD', result:'W 4-2', ab:4, h:2, rbi:1},
+    {date:'9/27/2025', opp:'@LAD', result:'W 3-1', ab:5, h:3, rbi:2},
+    {date:'9/26/2025', opp:'@LAD', result:'L 2-5', ab:3, h:1, rbi:0},
+    {date:'9/25/2025', opp:'vs SD', result:'W 6-3', ab:4, h:2, rbi:2},
+    {date:'9/24/2025', opp:'vs SD', result:'W 5-2', ab:4, h:1, rbi:1},
+    {date:'9/23/2025', opp:'vs COL', result:'W 8-1', ab:5, h:3, rbi:3},
+    {date:'9/22/2025', opp:'vs COL', result:'W 7-4', ab:4, h:2, rbi:1},
+    {date:'9/21/2025', opp:'vs COL', result:'L 3-6', ab:4, h:0, rbi:0},
+    {date:'9/20/2025', opp:'@MIL', result:'W 4-3', ab:5, h:2, rbi:2},
+    {date:'9/19/2025', opp:'@MIL', result:'W 5-4', ab:3, h:2, rbi:1},
+    {date:'9/18/2025', opp:'@MIL', result:'W 6-2', ab:4, h:3, rbi:2},
+    {date:'9/17/2025', opp:'vs ARI', result:'W 7-3', ab:4, h:1, rbi:1},
+    {date:'9/16/2025', opp:'vs ARI', result:'L 2-4', ab:4, h:1, rbi:0},
+    {date:'9/15/2025', opp:'vs PHI', result:'W 5-2', ab:4, h:2, rbi:1},
+    {date:'9/14/2025', opp:'vs PHI', result:'W 6-1', ab:5, h:3, rbi:3},
+  ];
+  
+  document.getElementById('game-log-rows').innerHTML = games.map(g => `
+    <div class="game-log-row">
+      <div class="game-log-date">${g.date}</div>
+      <div class="game-log-opp">${g.opp}</div>
+      <div class="game-log-result ${g.result.startsWith('W') ? 'win' : 'loss'}">${g.result}</div>
+      <div class="game-log-stat">${g.ab}</div>
+      <div class="game-log-stat">${g.h}</div>
+      <div class="game-log-stat">${g.rbi}</div>
+    </div>
+  `).join('');
+}
+
+function runComparison() {
+  const selected = document.getElementById('compare-select').value;
+  if(!selected) {
+    document.getElementById('comparison-output').innerHTML = '';
+    return;
+  }
+  
+  let p2 = null;
+  for(const team of Object.values(TEAMS)) {
+    const found = team.players.find(x => x.name === selected);
+    if(found) {
+      p2 = found;
+      break;
+    }
+  }
+  if(!p2 || !currentTeam) return;
+  
+  const p1 = currentTeam.players.find(x => x.avg > 0);
+  if(!p1) return;
+  
+  const metrics = [
+    {label:'AVG', v1:p1.avg, v2:p2.avg, fmt:(x)=>x.toFixed(3)},
+    {label:'OBP', v1:p1.avg*1.2, v2:p2.avg*1.2, fmt:(x)=>x.toFixed(3)},
+    {label:'SLG', v1:p1.ops*0.65, v2:p2.ops*0.65, fmt:(x)=>x.toFixed(3)},
+    {label:'HR', v1:p1.hr, v2:p2.hr, fmt:(x)=>Math.round(x)},
+    {label:'RBI', v1:p1.rbi, v2:p2.rbi, fmt:(x)=>Math.round(x)},
+    {label:'WAR', v1:p1.war, v2:p2.war, fmt:(x)=>x.toFixed(1)},
+  ];
+  
+  document.getElementById('comparison-output').innerHTML = `
+    <div class="compare-card">
+      <div class="compare-card-name">${p1.name}</div>
+      ${metrics.map(m => `
+        <div class="compare-metric">
+          <div class="compare-metric-label">${m.label}</div>
+          <div class="compare-metric-val">${m.fmt(m.v1)}</div>
+          ${m.v1 > m.v2 ? '<div class="compare-winner">↑</div>' : '<div style="color:var(--orange);font-size:9px;">↓</div>'}
+        </div>
+      `).join('')}
+    </div>
+    <div class="compare-card">
+      <div class="compare-card-name">${p2.name}</div>
+      ${metrics.map(m => `
+        <div class="compare-metric">
+          <div class="compare-metric-label">${m.label}</div>
+          <div class="compare-metric-val">${m.fmt(m.v2)}</div>
+          ${m.v2 > m.v1 ? '<div class="compare-winner">↑</div>' : '<div style="color:var(--orange);font-size:9px;">↓</div>'}
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+window.addEventListener('load', () => {
+  loadAllProspects();
+  buildCompareDropdown();
+  generateGameLog();
+  document.querySelectorAll('.tab')[0].classList.add('on');
+  document.getElementById('dashboard').classList.add('on');
+});
+</script>
+</body>
+</html>

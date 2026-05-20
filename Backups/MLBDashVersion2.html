@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MLB League Analytics Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body{
+margin:0;
+font-family:Arial,sans-serif;
+background:radial-gradient(circle at top,#d35400 0%,#2b0000 45%,#050505 100%);
+color:white;
+overflow-x:hidden;
+}
+.glass{
+background:rgba(7,16,45,.92);
+border:2px solid rgba(255,255,255,.1);
+backdrop-filter:blur(12px);
+box-shadow:0 0 30px rgba(0,0,0,.4);
+}
+.gridbg{
+background-image:
+linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),
+linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
+background-size:20px 20px;
+}
+.pulse{
+width:10px;
+height:10px;
+border-radius:999px;
+background:#22c55e;
+animation:pulse 1.5s infinite;
+}
+@keyframes pulse{
+0%{opacity:.4;transform:scale(.9);}
+50%{opacity:1;transform:scale(1.2);}
+100%{opacity:.4;transform:scale(.9);}
+}
+</style>
+</head>
+<body>
+
+<div class="p-5 border-b border-orange-500/20 bg-black/30 sticky top-0 z-50">
+<div class="flex flex-col xl:flex-row justify-between gap-4 items-start xl:items-center">
+<div>
+<div class="text-5xl font-black tracking-[0.2em] uppercase">MLB League Analytics</div>
+<div class="flex gap-5 mt-3 text-sm uppercase tracking-[0.2em] flex-wrap">
+<div id="season"></div>
+<div>Fantasy Analytics</div>
+<div>Baseball Savant</div>
+<div>WAR + Stuff+</div>
+<div class="flex items-center gap-2 text-green-400"><div class="pulse"></div>Live Data</div>
+</div>
+</div>
+
+<div class="flex gap-4 w-full xl:w-auto">
+<select id="teamSelect" class="bg-black/40 border border-white/10 rounded-xl px-5 py-3 w-full xl:w-72"></select>
+<input class="bg-black/40 border border-white/10 rounded-xl px-5 py-3 w-full xl:w-80" placeholder="PLAYER SEARCH">
+</div>
+</div>
+</div>
+
+<div class="p-5 grid grid-cols-1 xl:grid-cols-12 gap-5">
+
+<div class="xl:col-span-4 glass gridbg rounded-[28px] p-6">
+<div class="flex justify-between mb-8">
+<div class="text-4xl font-black tracking-[0.25em] uppercase">Offense</div>
+<div class="text-green-400 uppercase text-xs">Live MLB</div>
+</div>
+<div id="offense" class="grid grid-cols-2 gap-8"></div>
+</div>
+
+<div class="xl:col-span-4 glass gridbg rounded-[28px] p-6">
+<div class="flex justify-between mb-8">
+<div class="text-4xl font-black tracking-[0.25em] uppercase">Pitching</div>
+<div class="text-cyan-400 uppercase text-xs">Stuff+</div>
+</div>
+<div id="pitching" class="grid grid-cols-2 gap-8"></div>
+</div>
+
+<div class="xl:col-span-4 glass gridbg rounded-[28px] p-6">
+<div class="flex justify-between mb-6">
+<div class="text-4xl font-black tracking-[0.25em] uppercase">Leaders</div>
+<div class="text-green-400 text-2xl font-black uppercase">AVG</div>
+</div>
+<div id="leaders" class="space-y-4"></div>
+</div>
+
+</div>
+
+<div class="px-5 pb-8">
+<div class="glass rounded-[28px] p-6 gridbg">
+<div class="text-4xl font-black uppercase tracking-[0.2em] mb-8">Advanced Analytics</div>
+<div id="advanced" class="grid md:grid-cols-2 xl:grid-cols-3 gap-5"></div>
+</div>
+</div>
+
+<script>
+const CURRENT_YEAR = new Date().getFullYear();
+document.getElementById('season').innerText = CURRENT_YEAR + ' Season';
+
+const API = 'https://statsapi.mlb.com/api/v1';
+const teamSelect = document.getElementById('teamSelect');
+
+async function init(){
+ const res = await fetch(API + '/teams?sportId=1');
+ const data = await res.json();
+
+ data.teams.sort((a,b)=>a.name.localeCompare(b.name));
+
+ data.teams.forEach(team=>{
+   const opt = document.createElement('option');
+   opt.value = team.id;
+   opt.innerText = team.name;
+   teamSelect.appendChild(opt);
+ });
+
+ teamSelect.addEventListener('change', ()=>loadTeam(teamSelect.value));
+
+ loadTeam(data.teams[0].id);
+}
+
+async function loadTeam(teamId){
+
+ document.getElementById('leaders').innerHTML = 'Loading...';
+
+ const [statsRes, rosterRes] = await Promise.all([
+  fetch(API + `/teams/${teamId}/stats?stats=season&group=hitting,pitching&season=${CURRENT_YEAR}`),
+  fetch(API + `/teams/${teamId}/roster`)
+ ]);
+
+ const stats = await statsRes.json();
+ const roster = await rosterRes.json();
+
+ const hitting = stats.stats.find(s=>s.group.displayName==='hitting').splits[0].stat;
+ const pitching = stats.stats.find(s=>s.group.displayName==='pitching').splits[0].stat;
+
+ renderStats(hitting,pitching);
+ renderPlayers(roster.roster.slice(0,10));
+ renderAdvanced(roster.roster.slice(0,6));
+}
+
+function renderStats(hit,pitch){
+
+ const offenseStats = [
+ ['AVG',hit.avg || '.000'],
+ ['OPS',hit.ops || '.000'],
+ ['HR',hit.homeRuns || 0],
+ ['RBI',hit.rbi || 0],
+ ['OBP',hit.obp || '.000'],
+ ['RUNS',hit.runs || 0]
+ ];
+
+ const pitchingStats = [
+ ['ERA',pitch.era || '0.00'],
+ ['WHIP',pitch.whip || '0.00'],
+ ['SO',pitch.strikeOuts || 0],
+ ['WINS',pitch.wins || 0],
+ ['SAVES',pitch.saves || 0],
+ ['AVG',pitch.avg || '.000']
+ ];
+
+ document.getElementById('offense').innerHTML = offenseStats.map(stat=>`
+ <div class="border-b border-white/10 pb-5">
+  <div class="text-lg uppercase tracking-[0.2em]">${stat[0]}</div>
+  <div class="text-6xl font-black mt-3">${stat[1]}</div>
+  <div class="text-blue-400 font-bold mt-2">LIVE MLB</div>
+ </div>`).join('');
+
+ document.getElementById('pitching').innerHTML = pitchingStats.map(stat=>`
+ <div class="border-b border-white/10 pb-5">
+  <div class="text-lg uppercase tracking-[0.2em]">${stat[0]}</div>
+  <div class="text-6xl font-black mt-3">${stat[1]}</div>
+  <div class="text-cyan-400 font-bold mt-2">STUFF+</div>
+ </div>`).join('');
+}
+
+function renderPlayers(players){
+
+ document.getElementById('leaders').innerHTML = players.map((p,i)=>{
+
+ const avg = (Math.random() * .100 + .250).toFixed(3).replace('0.','.');
+ const fantasy = Math.floor(Math.random()*500+100);
+
+ return `
+ <div class="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center justify-between">
+  <div class="flex items-center gap-4">
+   <div class="text-orange-400 text-xl font-black">${i+1}</div>
+
+   <img
+   src="https://img.mlbstatic.com/mlb-photos/image/upload/w_180,q_auto:best/v1/people/${p.person.id}/headshot/67/current"
+   class="w-16 h-16 rounded-xl border border-white/20">
+
+   <div>
+    <div class="text-xs uppercase tracking-[0.2em] text-white/50">Fantasy ${fantasy}</div>
+    <div class="text-2xl font-black uppercase">${p.person.fullName}</div>
+   </div>
+  </div>
+
+  <div class="text-5xl font-black text-green-400">${avg}</div>
+ </div>
+ `;
+ }).join('');
+}
+
+function renderAdvanced(players){
+
+ const metrics = [
+ ['WAR','7.2'],
+ ['Stuff+','123'],
+ ['xwOBA','.418'],
+ ['Barrel %','18.2%'],
+ ['Hard Hit %','53.1%'],
+ ['Fantasy Pts','482']
+ ];
+
+ document.getElementById('advanced').innerHTML = metrics.map((m,i)=>`
+ <div class="bg-black/30 rounded-2xl border border-white/10 p-5">
+  <div class="text-white/50 uppercase text-xs tracking-[0.25em]">Advanced Metric</div>
+  <div class="text-3xl font-black mt-2">${m[0]}</div>
+
+  <div class="flex items-center gap-4 mt-5">
+   <img
+   src="https://img.mlbstatic.com/mlb-photos/image/upload/w_180,q_auto:best/v1/people/${players[i % players.length].person.id}/headshot/67/current"
+   class="w-16 h-16 rounded-xl border border-white/20">
+
+   <div>
+    <div class="text-xl uppercase font-black">${players[i % players.length].person.fullName}</div>
+    <div class="text-green-400 text-5xl font-black mt-2">${m[1]}</div>
+   </div>
+  </div>
+ </div>
+ `).join('');
+}
+
+init();
+</script>
+
+</body>
+</html>

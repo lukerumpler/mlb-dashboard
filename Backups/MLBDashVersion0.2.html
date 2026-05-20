@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MLB Intelligence Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --orange: #e8722a;
+      --orange-dim: rgba(232, 114, 42, 0.15);
+      --blue-bright: #5ab4f5;
+      --blue-poor: #2471a3;
+      --blue-very-poor: #1a3a5c;
+      --green: #4dce8a;
+      --red: #c0392b;
+      --red-dim: #e85a5a;
+      --gold: #f5c842;
+      --navy: #07102d;
+      --text-dim: #a0b4cc;
+      --bg: #030a1a;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      font-family: 'Barlow', sans-serif;
+      background: radial-gradient(ellipse at top, #c94e10 0%, #1a0800 35%, #030a1a 70%, #01050f 100%);
+      color: #fff;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+      background-size: 28px 28px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .hdr {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(3, 8, 20, 0.92);
+      border-bottom: 2px solid rgba(232, 114, 42, 0.3);
+      backdrop-filter: blur(16px);
+      padding: 12px 20px;
+    }
+
+    .hdr-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .logo-block .season-label {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 2px;
+    }
+
+    .logo-block .dash-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 32px;
+      letter-spacing: 3px;
+      line-height: 1;
+      background: linear-gradient(135deg, #fff 40%, #e8722a);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hdr-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    select.tpick {
+      background: rgba(13, 28, 58, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      color: #fff;
+      padding: 8px 14px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23a0b4cc'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 28px;
+    }
+
+    .tpick:focus {
+      outline: none;
+      border-color: var(--orange);
+    }
+
+    .refresh-btn {
+      background: rgba(13, 28, 58, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: var(--text-dim);
+      padding: 7px 14px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .refresh-btn:hover {
+      background: rgba(232, 114, 42, 0.15);
+      border-color: var(--orange);
+      color: #fff;
+    }
+
+    .tabs-wrap {
+      background: rgba(3, 8, 20, 0.7);
+      border-bottom: 1px solid rgba(30, 48, 85, 1);
+      overflow-x: auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .tabs {
+      display: flex;
+      min-width: max-content;
+    }
+
+    .tab {
+      padding: 11px 16px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+
+    .tab.on {
+      color: var(--orange);
+      border-bottom-color: var(--orange);
+    }
+
+    .tab:hover:not(.on) {
+      color: #fff;
+      border-bottom-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .body {
+      padding: 18px 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .pg {
+      display: none;
+    }
+
+    .pg.on {
+      display: block;
+    }
+
+    .panel {
+      background: rgba(7, 16, 45, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 18px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      margin-bottom: 16px;
+    }
+
+    .panel-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 24px;
+      letter-spacing: 2px;
+      color: var(--orange);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+    }
+
+    /* === PERCENTILE BAR DESIGN (SPEC COMPLIANCE) === */
+    .percentile-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .percentile-label {
+      min-width: 100px;
+      text-align: right;
+      font-size: 12px;
+      color: var(--text-dim);
+      font-family: 'Barlow Condensed', sans-serif;
+    }
+
+    .percentile-track {
+      flex: 1;
+      height: 18px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 2px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .percentile-fill {
+      height: 100%;
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 6px;
+      transition: width 0.3s ease;
+    }
+
+    .percentile-bubble {
+      width: 21px;
+      height: 21px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 50%;
+      color: #07102d;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      right: -10px;
+      z-index: 10;
+    }
+
+    .percentile-value {
+      min-width: 50px;
+      text-align: right;
+      font-size: 12px;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* === PROFILE SECTION === */
+    .profile-layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 16px;
+    }
+
+    .profile-card {
+      position: sticky;
+      top: 78px;
+      background: rgba(7, 16, 45, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 18px;
+      height: fit-content;
+    }
+
+    .profile-photo {
+      width: 100%;
+      height: 180px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid var(--orange);
+      margin-bottom: 12px;
+      background: rgba(13, 28, 58, 0.5);
+    }
+
+    .profile-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .profile-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 26px;
+      letter-spacing: 2px;
+      margin-bottom: 4px;
+    }
+
+    .profile-meta {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    .profile-stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+
+    .profile-stat-cell {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 8px;
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .profile-stat-cell:nth-child(even) {
+      border-right: none;
+    }
+
+    .stat-label {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 3px;
+    }
+
+    .stat-val {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 24px;
+      line-height: 1;
+      color: #fff;
+    }
+
+    /* === CHART CONTAINER FIX === */
+    .chart-wrapper {
+      position: relative;
+      width: 100%;
+      height: 260px;
+      margin: 12px 0;
+    }
+
+    .chart-wrapper canvas {
+      max-height: 260px !important;
+      max-width: 100% !important;
+    }
+
+    /* === TABLES === */
+    .tbl {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .tbl th {
+      text-align: left;
+      padding: 8px;
+      color: var(--text-dim);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      border-bottom: 1px solid rgba(30, 48, 85, 1);
+      font-family: 'Barlow Condensed', sans-serif;
+    }
+
+    .tbl td {
+      padding: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .tbl tr:hover td {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .win {
+      color: var(--green);
+      font-weight: 600;
+    }
+
+    .loss {
+      color: var(--red-dim);
+      font-weight: 600;
+    }
+
+    /* === MATRIX === */
+    .matrix-grid {
+      display: grid;
+      grid-template-columns: 100px repeat(9, 1fr);
+      gap: 4px;
+      font-size: 10px;
+      margin-top: 12px;
+    }
+
+    .matrix-grid div {
+      padding: 5px;
+      border-radius: 4px;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .matrix-label {
+      text-align: left;
+      color: var(--text-dim);
+      font-weight: 700;
+    }
+
+    .matrix-hot {
+      background: rgba(192, 57, 43, 0.4);
+      color: #fff;
+    }
+
+    .matrix-cold {
+      background: rgba(36, 113, 163, 0.4);
+      color: #fff;
+    }
+
+    .matrix-neutral {
+      background: rgba(160, 180, 204, 0.2);
+      color: #fff;
+    }
+
+    /* === IDENTITY PANEL (TOP OF PROFILE) === */
+    .identity-section {
+      background: rgba(13, 28, 58, 0.6);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .identity-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      margin-bottom: 6px;
+    }
+
+    .identity-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .identity-label {
+      color: var(--text-dim);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 600;
+    }
+
+    .identity-val {
+      color: #fff;
+      font-family: 'Barlow Condensed', sans-serif;
+      text-align: right;
+    }
+
+    /* === SCOUT SUMMARY (PURE TEXT) === */
+    .scout-summary {
+      background: rgba(13, 28, 58, 0.4);
+      border-left: 2px solid var(--orange);
+      padding: 10px;
+      margin-bottom: 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      line-height: 1.5;
+      color: rgba(255, 255, 255, 0.75);
+    }
+
+    /* === RESPONSIVE === */
+    @media (max-width: 1000px) {
+      .profile-layout {
+        grid-template-columns: 1fr;
+      }
+      .profile-card {
+        position: static;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .body {
+        padding: 12px;
+      }
+      .tab {
+        padding: 8px 10px;
+        font-size: 9px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- HEADER -->
+  <div class="hdr">
+    <div class="hdr-inner">
+      <div class="logo-block">
+        <div class="season-label">2026 SEASON</div>
+        <div class="dash-title">MLB Intelligence</div>
+      </div>
+      <div class="hdr-right">
+        <select class="tpick" id="tsel" onchange="loadTeam(this.value)"></select>
+        <button class="refresh-btn" onclick="refreshDashboard()">↻ REFRESH</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs-wrap">
+    <div class="tabs" id="tabs">
+      <div class="tab on" data-tab="profile">👤 PLAYER PROFILE</div>
+      <div class="tab" data-tab="personnel">PERSONNEL</div>
+      <div class="tab" data-tab="analysis">ANALYSIS</div>
+      <div class="tab" data-tab="dashbd">DASHBOARD</div>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="body">
+
+    <!-- === PLAYER PROFILE TAB === -->
+    <div class="pg on" id="pg-profile">
+      <div class="profile-layout">
+        
+        <!-- LEFT: IDENTITY & CONTEXT -->
+        <div class="profile-card">
+          <div class="profile-photo">
+            <img src="https://via.placeholder.com/320x180?text=Player+Photo" alt="Player" id="playerHeadshot">
+          </div>
+
+          <div class="profile-name" id="playerName">—</div>
+          <div class="profile-meta" id="playerMeta">
+            <div>Select a player</div>
+          </div>
+
+          <!-- IDENTITY BLOCK -->
+          <div class="identity-section">
+            <div class="identity-row">
+              <span class="identity-label">Team</span>
+              <span class="identity-val" id="playerTeam">—</span>
+            </div>
+            <div class="identity-row">
+              <span class="identity-label">Position</span>
+              <span class="identity-val" id="playerPos">—</span>
+            </div>
+            <div class="identity-row">
+              <span class="identity-label">B/T</span>
+              <span class="identity-val" id="playerBT">—</span>
+            </div>
+            <div class="identity-row">
+              <span class="identity-label">Age</span>
+              <span class="identity-val" id="playerAge">—</span>
+            </div>
+            <div class="identity-row">
+              <span class="identity-label">Last Updated</span>
+              <span class="identity-val" id="playerUpdated">—</span>
+            </div>
+          </div>
+
+          <!-- SCOUTING SUMMARY (TEXT ONLY, NO GRADES) -->
+          <div class="scout-summary" id="scoutSummary">
+            No player selected. Select from team roster to view scouting context.
+          </div>
+
+          <!-- STATS DISPLAY (PURE IDENTITY, NO EVALUATION) -->
+          <div style="font-family: 'Bebas Neue'; font-size: 13px; letter-spacing: 1px; color: var(--orange); margin-top: 12px; margin-bottom: 6px;">2026 STATS</div>
+          <div class="profile-stat-grid">
+            <div class="profile-stat-cell">
+              <div class="stat-label">AVG</div>
+              <div class="stat-val" id="playerAvg">.—</div>
+            </div>
+            <div class="profile-stat-cell">
+              <div class="stat-label">OBP</div>
+              <div class="stat-val" id="playerObp">.—</div>
+            </div>
+            <div class="profile-stat-cell">
+              <div class="stat-label">SLG</div>
+              <div class="stat-val" id="playerSlg">.—</div>
+            </div>
+            <div class="profile-stat-cell">
+              <div class="stat-label">OPS</div>
+              <div class="stat-val" id="playerOps">.—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: PERCENTILE INTELLIGENCE + PERFORMANCE DATA -->
+        <div>
+          
+          <!-- PERCENTILE PANEL -->
+          <div class="panel">
+            <div class="panel-title">PERCENTILE RANKINGS</div>
+            <div id="percentilePanel"></div>
+            <div style="font-size: 10px; color: var(--text-dim); margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06);">
+              <strong>Legend:</strong> Red ≥70 (Elite) · Orange 60-79 (Above Avg) · Gray 40-59 (Average) · Blue 20-39 (Below Avg) · Dark Blue &lt;20 (Poor)
+            </div>
+          </div>
+
+          <!-- TREND CHART -->
+          <div class="panel">
+            <div class="panel-title">ROLLING TRENDS</div>
+            <div class="chart-wrapper">
+              <canvas id="trendChart"></canvas>
+            </div>
+          </div>
+
+          <!-- PITCH USAGE MATRIX (FOR PITCHERS) -->
+          <div class="panel">
+            <div class="panel-title">PITCH USAGE BY COUNT</div>
+            <div id="pitchMatrix" class="matrix-grid"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- === PERSONNEL TAB === -->
+    <div class="pg" id="pg-personnel">
+      <div class="panel">
+        <div class="panel-title">ACTIVE ROSTER</div>
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>NAME</th>
+              <th>POS</th>
+              <th>#</th>
+              <th>AB</th>
+              <th>AVG</th>
+              <th>HR</th>
+            </tr>
+          </thead>
+          <tbody id="rosterBody"></tbody>
+        </table>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">INJURED LIST</div>
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>NAME</th>
+              <th>POS</th>
+              <th>IL STATUS</th>
+            </tr>
+          </thead>
+          <tbody id="ilBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- === ANALYSIS TAB === -->
+    <div class="pg" id="pg-analysis">
+      <div class="panel">
+        <div class="panel-title">TEAM ANALYSIS</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+          <div>
+            <div class="stat-label">BATTING AVG</div>
+            <div class="stat-val" id="teamAvg">.—</div>
+          </div>
+          <div>
+            <div class="stat-label">TEAM OPS</div>
+            <div class="stat-val" id="teamOps">.—</div>
+          </div>
+          <div>
+            <div class="stat-label">TEAM ERA</div>
+            <div class="stat-val" id="teamEra">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- === DASHBOARD TAB === -->
+    <div class="pg" id="pg-dashbd">
+      <div class="panel">
+        <div class="panel-title">STANDINGS & RECENT</div>
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>TEAM</th>
+              <th>W</th>
+              <th>L</th>
+              <th>GB</th>
+            </tr>
+          </thead>
+          <tbody id="standingsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ========== CONFIGURATION ==========
+    const TEAMS = [
+      { id: 109, name: 'Arizona Diamondbacks', abbr: 'ARI' },
+      { id: 144, name: 'Atlanta Braves', abbr: 'ATL' },
+      { id: 110, name: 'Baltimore Orioles', abbr: 'BAL' },
+      { id: 111, name: 'Boston Red Sox', abbr: 'BOS' },
+      { id: 112, name: 'Chicago Cubs', abbr: 'CHC' },
+      { id: 113, name: 'Chicago White Sox', abbr: 'CWS' },
+      { id: 114, name: 'Cleveland Guardians', abbr: 'CLE' }
+    ];
+
+    let currentTeam = TEAMS[0].id;
+    let trendChart = null;
+
+    // ========== UTILITIES ==========
+    function getPercentileColor(pct) {
+      if (pct >= 70) return '#c0392b';      // Elite red
+      if (pct >= 60) return '#e8722a';      // Above avg orange
+      if (pct >= 40) return '#a0b4cc';      // Average gray
+      if (pct >= 20) return '#2471a3';      // Below avg blue
+      return '#1a3a5c';                     // Very poor dark blue
+    }
+
+    // ========== FETCH WITH PROXY ==========
+    async function fetchJSON(path) {
+      try {
+        const response = await fetch(path);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return await response.json();
+      } catch (err) {
+        console.error('Fetch error:', err);
+        return null;
+      }
+    }
+
+    // ========== TAB NAVIGATION ==========
+    function setupTabs() {
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+          document.querySelectorAll('.pg').forEach(p => p.classList.remove('on'));
+          tab.classList.add('on');
+          document.getElementById('pg-' + tab.dataset.tab).classList.add('on');
+        });
+      });
+    }
+
+    // ========== LOAD TEAM ==========
+    function loadTeam(teamId) {
+      currentTeam = parseInt(teamId);
+      const team = TEAMS.find(t => t.id === currentTeam);
+      document.title = `${team.name} - MLB Intelligence Dashboard`;
+      
+      // Mock data for demo — replace with actual API calls
+      loadRosterDemo();
+      loadAnalysisDemo();
+    }
+
+    // ========== LOAD PLAYER PROFILE ==========
+    function loadPlayerProfile(playerId) {
+      // MOCK DATA - Replace with actual API call to /api/mlb
+      const mockPlayer = {
+        id: playerId,
+        name: 'Juan Soto',
+        team: 'New York Mets',
+        position: 'Outfield',
+        bats: 'L',
+        throws: 'R',
+        age: 25,
+        avg: '.342',
+        obp: '.428',
+        slg: '.568',
+        ops: '.996'
+      };
+
+      document.getElementById('playerName').textContent = mockPlayer.name;
+      document.getElementById('playerMeta').innerHTML = `
+        <div>${mockPlayer.position} • ${mockPlayer.team}</div>
+        <div>Age: ${mockPlayer.age}</div>
+      `;
+      document.getElementById('playerTeam').textContent = mockPlayer.team;
+      document.getElementById('playerPos').textContent = mockPlayer.position;
+      document.getElementById('playerBT').textContent = `${mockPlayer.bats}/${mockPlayer.throws}`;
+      document.getElementById('playerAge').textContent = mockPlayer.age;
+      document.getElementById('playerUpdated').textContent = new Date().toLocaleDateString();
+
+      // SCOUT SUMMARY (NO ADJECTIVES, NO GRADES)
+      document.getElementById('scoutSummary').textContent = 
+        'Contact skills and plate discipline evident in above-average walk rate. Demonstrated offensive impact through home run and RBI production. Speed and defensive range indicate multi-tool profile. Continued performance tracking warranted.';
+
+      document.getElementById('playerAvg').textContent = mockPlayer.avg;
+      document.getElementById('playerObp').textContent = mockPlayer.obp;
+      document.getElementById('playerSlg').textContent = mockPlayer.slg;
+      document.getElementById('playerOps').textContent = mockPlayer.ops;
+
+      // RENDER PERCENTILES
+      renderPercentiles({
+        'Exit Velo': 92,
+        'Barrel %': 18,
+        'HardHit %': 64,
+        'xBA': 87,
+        'K%': 18,
+        'BB%': 14
+      });
+
+      // RENDER CHART & MATRIX
+      renderTrendChart();
+      renderPitchMatrix([
+        { name: '4-Seam', usage: { '0-0': 32, '1-1': 28, 'FULL': 48 } },
+        { name: 'Slider', usage: { '0-0': 31, '1-1': 31, 'FULL': 18 } },
+        { name: 'Curveball', usage: { '0-0': 15, '1-1': 20, 'FULL': 12 } }
+      ]);
+    }
+
+    // ========== PERCENTILE RENDERING ==========
+    function renderPercentiles(percentiles) {
+      const container = document.getElementById('percentilePanel');
+      container.innerHTML = '';
+      
+      Object.entries(percentiles).forEach(([label, pct]) => {
+        const color = getPercentileColor(pct);
+        const html = `
+          <div class="percentile-bar">
+            <span class="percentile-label">${label}</span>
+            <div class="percentile-track">
+              <div class="percentile-fill" style="width:${pct}%;background:${color};">
+                <span class="percentile-bubble">${pct}</span>
+              </div>
+            </div>
+            <span class="percentile-value">${pct}th</span>
+          </div>
+        `;
+        container.innerHTML += html;
+      });
+    }
+
+    // ========== TREND CHART (FIXED SIZING) ==========
+    function renderTrendChart() {
+      const ctx = document.getElementById('trendChart');
+      if (!ctx) return;
+
+      if (trendChart) trendChart.destroy();
+
+      trendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['-30', '-25', '-20', '-15', '-10', '-5'],
+          datasets: [
+            {
+              label: 'OPS',
+              data: [0.72, 0.78, 0.81, 0.85, 0.88, 0.96],
+              borderColor: '#4dce8a',
+              backgroundColor: 'rgba(77, 206, 138, 0.1)',
+              tension: 0.3,
+              fill: true,
+              borderWidth: 2,
+              pointRadius: 4,
+              pointBackgroundColor: '#4dce8a'
+            },
+            {
+              label: 'xwOBA',
+              data: [0.31, 0.33, 0.35, 0.36, 0.37, 0.40],
+              borderColor: '#f5c842',
+              backgroundColor: 'rgba(245, 200, 66, 0.05)',
+              tension: 0.3,
+              fill: true,
+              borderWidth: 2,
+              pointRadius: 4,
+              pointBackgroundColor: '#f5c842'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: {
+                color: '#a0b4cc',
+                usePointStyle: true,
+                padding: 15,
+                font: { size: 12, weight: 600 }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: false,
+              ticks: { color: '#a0b4cc', font: { size: 11 } },
+              grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false }
+            },
+            x: {
+              ticks: { color: '#a0b4cc', font: { size: 11 } },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
+
+    // ========== PITCH MATRIX ==========
+    function renderPitchMatrix(pitches) {
+      const counts = ['0-0', '1-1', 'FULL'];
+      const container = document.getElementById('pitchMatrix');
+      container.innerHTML = '<div class="matrix-label"></div>' + 
+        counts.map(c => `<div class="matrix-label">${c}</div>`).join('');
+
+      pitches.forEach(pitch => {
+        container.innerHTML += `<div class="matrix-label">${pitch.name}</div>`;
+        counts.forEach(count => {
+          const usage = pitch.usage[count] || 0;
+          let css = usage >= 35 ? 'matrix-hot' : usage <= 15 ? 'matrix-cold' : 'matrix-neutral';
+          container.innerHTML += `<div class="${css}">${usage}%</div>`;
+        });
+      });
+    }
+
+    // ========== DEMO DATA ==========
+    function loadRosterDemo() {
+      const roster = [
+        { name: 'Juan Soto', pos: 'OF', num: 22, ab: 412, avg: '.342', hr: 31 },
+        { name: 'Kyle Schwarber', pos: '1B', num: 12, ab: 385, avg: '.268', hr: 24 },
+        { name: 'Mitch Garver', pos: 'C', num: 18, ab: 298, avg: '.251', hr: 18 }
+      ];
+
+      document.getElementById('rosterBody').innerHTML = roster.map(p => `
+        <tr onclick="loadPlayerProfile(${p.name})">
+          <td><strong>${p.name}</strong></td>
+          <td>${p.pos}</td>
+          <td>${p.num}</td>
+          <td>${p.ab}</td>
+          <td>${p.avg}</td>
+          <td>${p.hr}</td>
+        </tr>
+      `).join('');
+
+      document.getElementById('ilBody').innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--green);">✅ No IL Entries</td></tr>';
+    }
+
+    function loadAnalysisDemo() {
+      document.getElementById('teamAvg').textContent = '.268';
+      document.getElementById('teamOps').textContent = '.768';
+      document.getElementById('teamEra').textContent = '3.87';
+    }
+
+    // ========== REFRESH ==========
+    function refreshDashboard() {
+      loadPlayerProfile(1);
+      console.log('Dashboard refreshed');
+    }
+
+    // ========== INIT ==========
+    document.addEventListener('DOMContentLoaded', () => {
+      const sel = document.getElementById('tsel');
+      sel.innerHTML = TEAMS.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+      sel.value = TEAMS[0].id;
+
+      setupTabs();
+      loadTeam(TEAMS[0].id);
+      loadPlayerProfile(1);
+    });
+  </script>
+</body>
+
+</html>

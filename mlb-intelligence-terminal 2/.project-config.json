@@ -1,0 +1,35 @@
+{
+  "build_command": "pnpm run build",
+  "capabilities": [],
+  "dev_command": "pnpm run dev",
+  "env_vars": {},
+  "experiments": null,
+  "git_remote": {
+    "repo_url": "s3://vida-prod-gitrepo/webdev-git/310519663654412572/Ef2XQbiY4hi86z45mQrHT6",
+    "access_key_id": "ASIAZV3A2ECZNMHCPBU5",
+    "secret_access_key": "LgxnE8w5FBXN1Isn3H2hOBUGnkhiSYjJL+iK4YeM",
+    "session_token": "IQoJb3JpZ2luX2VjEOb//////////wEaCXVzLWVhc3QtMSJIMEYCIQCI/0kPc1D5JMhvq6AzIHk9wdWSMPjqdBZ89DvoZ2f0TwIhANyZLWOc8KOLgU1/o8jAut/3bwdN+lv3UPe2TjnbfczCKv8DCK///////////wEQBBoMNjY1Mzg2MDk4ODY2IgzZ4fjkEDnclpSt4ykq0wP7T81Q8Dm0pj96A3M+dSmaeJIyb+S6gMiOt5mD2sU54gEtWkLRERCUMlecIYutLGKX1GtPX/ndxwVrAWVPVOBmdG/wjSgVEbotpzYcofb4ttRyWvZ5huMK+iiV21Qph7wurNWipJxNrjjQ8LnU6iSo9Yw9mKUfPhp+BH8atu8hPGOxGfyDOPi2XmLrsw8h4mi9Qk/xNgB3h4pH4JgOdNxma455TKR7CPlH50b0TPFQ2aQ32YAyhPAlee3QETueihzFB4Oi8CrW1KOJnoYnYYeOi732ZJp6VTQkgKxZTfXogXezXTqDr8e3aV8I2aofs1cACVMJbHQOhOrvIBZwtutaGOVR6sGIoHtw3pnKO1nJwBMdNx7RaV2aiIQUpYzzc1mvL0lalc2Vilomy+yWPI7rBHFook1Q2K/BBmTCYkniM1mCSNMXKi3pliE8ZfpxKrwrP0OjdEupPIxHADFk6oZyEtAuZLS0fBW9xesGZ27lEPTjc018OrNsdrPVkuvPvlBm+T1wuSqXl9ucX7HkIE9NnbP8ItTpY7MMWVqXuSXWp9E/cxi8kLUZ9i/d1EUpeqaXh75CnC971qBK0SegPJS2kODDv+QawEaapTcFgomwkXRq+jCx8KjQBjqcATWKH21MUZ6Zp+1P9R3Jrz6Ln8XObpOSfHcWEAmMuO8pRnlkmi9MdBR8eEL40FxI+a1+Ayt8LX2ir4yfJUegxFHX5OJrtJGHwn3WOO2B3VaH8tjqqxqKJgAk9ZQPnxhkn5j9GSUAthycTReGNrU58NJBRQIEAMPtCa18nlkYmkWDV2fnt8pExmj7eb8PWcVt+8wlUF2dh2c2Rk1MVA==",
+    "expiration": "2026-05-18T09:50:41.000Z"
+  },
+  "name": "mlb-intelligence-terminal",
+  "path": "/home/ubuntu/mlb-intelligence-terminal",
+  "port": 3000,
+  "secrets": {
+    "BUILT_IN_FORGE_API_KEY": "RP6VuX7RtaCahtyahTQBoG",
+    "BUILT_IN_FORGE_API_URL": "https://forge.manus.ai",
+    "JWT_SECRET": "bAwcwHFKvvGBsMhSGTD4je",
+    "OAUTH_SERVER_URL": "https://api.manus.im",
+    "OWNER_NAME": "Lucas Rumpler",
+    "OWNER_OPEN_ID": "RGq4SakDqU2g22v3ho7XU6",
+    "VITE_ANALYTICS_ENDPOINT": "https://manus-analytics.com",
+    "VITE_ANALYTICS_WEBSITE_ID": "d52e01c0-1e40-4b69-afd7-64f1de14d089",
+    "VITE_APP_ID": "Ef2XQbiY4hi86z45mQrHT6",
+    "VITE_APP_LOGO": "https://files.manuscdn.com/user_upload_by_module/web_dev_logo/310519663654412572/QIMxmXtjrQnncsDN.png",
+    "VITE_APP_TITLE": "MLB Intelligence Terminal",
+    "VITE_FRONTEND_FORGE_API_KEY": "9eVwVJUA3HBkjytzYZ57kk",
+    "VITE_FRONTEND_FORGE_API_URL": "https://forge.manus.ai",
+    "VITE_OAUTH_PORTAL_URL": "https://manus.im"
+  },
+  "template_id": "web-static",
+  "test_command": "pnpm test"
+}

@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>MLB Intelligence Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* --- BEGIN ALL CSS FROM BOTH FILES --- */
+    :root{
+      --orange:#e8722a;--orange-dim:rgba(232,114,42,.15);--blue-bright:#5ab4f5;
+      --green:#4dce8a;--red:#e85a5a;--gold:#f5c842;--navy:#07102d;
+      --navy-mid:#0d1c3a;--navy-light:#0f2040;--navy-border:#1e3055;--text-dim:#a0b4cc;
+      --bg:#030a1a;--panel:#07102d;--panel2:#0d1c3a;--border:#1e3055;--text:#a0b4cc;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:'Barlow',sans-serif;
+      background:radial-gradient(ellipse at top,#c94e10 0%,#1a0800 35%,#030a1a 70%,#01050f 100%);
+      color:#fff;min-height:100vh;overflow-x:hidden;
+    }
+    body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:28px 28px;pointer-events:none;z-index:0;}
+    .hdr{
+      position:sticky;top:0;z-index:100;
+      background:rgba(3,8,20,.92);
+      border-bottom:2px solid rgba(232,114,42,.3);
+      backdrop-filter:blur(16px);
+      padding:12px 20px;
+      display:flex;align-items:center;justify-content:space-between;
+    }
+    .dash-title{
+      font-family:'Bebas Neue';font-size:34px;letter-spacing:3px;line-height:1;
+      background:linear-gradient(135deg,#fff 40%,#e8722a);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    }
+    .hdr-right{display:flex;gap:10px;align-items:center}
+    select,button{
+      background:rgba(13,28,58,.85);
+      border:1px solid rgba(255,255,255,.12);
+      color:#fff;border-radius:8px;
+      padding:6px 12px;
+      font-family:'Barlow Condensed';
+      font-size:13px;font-weight:700;
+      cursor:pointer;
+    }
+    button:hover{border-color:var(--orange)}
+    .tabs{
+      display:flex;gap:2px;
+      background:rgba(3,8,20,.7);
+      border-bottom:1px solid var(--border);
+      overflow-x:auto;
+    }
+    .tab{
+      padding:9px 12px;
+      font-family:'Barlow Condensed';
+      font-size:10px;font-weight:700;
+      letter-spacing:1.5px;text-transform:uppercase;
+      color:var(--text);cursor:pointer;
+      border-bottom:3px solid transparent;
+      white-space:nowrap;
+    }
+    .tab.on{color:var(--orange);border-bottom-color:var(--orange)}
+    .body{padding:16px}
+    .pg{display:none}
+    .pg.on{display:block}
+    .panel{
+      background:rgba(7,16,45,.9);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:14px;
+      padding:14px;margin-bottom:14px;
+    }
+    .panel-title{
+      font-family:'Bebas Neue';
+      font-size:20px;letter-spacing:2px;
+      margin-bottom:10px;
+      color:var(--orange);
+    }
+    .profile-layout{
+      display:grid;grid-template-columns:340px 1fr;gap:14px;
+    }
+    .profile-card{
+      position:sticky;top:78px;
+    }
+    .profile-photo{
+      width:88px;height:88px;border-radius:14px;
+      overflow:hidden;border:2px solid var(--orange);
+    }
+    .profile-photo img{width:100%;height:100%;object-fit:cover}
+    .profile-name{
+      font-family:'Bebas Neue';font-size:28px;letter-spacing:2px;
+    }
+    .meta{font-size:11px;color:var(--text)}
+    .stat-grid{
+      display:grid;grid-template-columns:repeat(4,1fr);
+      gap:6px;margin-top:10px;
+    }
+    .stat-box{
+      background:rgba(13,28,58,.7);
+      border-radius:8px;
+      padding:6px;text-align:center;
+    }
+    .stat-label{font-size:9px;color:var(--text);letter-spacing:1px}
+    .stat-val{font-family:'Bebas Neue';font-size:20px}
+    .tool-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:10px}
+    .tool{
+      background:rgba(13,28,58,.7);
+      border-radius:8px;padding:6px;text-align:center;
+    }
+    .tool-name{font-size:9px;color:var(--text)}
+    .tool-grade{font-family:'Bebas Neue';font-size:22px}
+    .pct-row{display:flex;align-items:center;gap:6px;margin:4px 0}
+    .pct-label{width:80px;font-size:10px;color:var(--text)}
+    .pct-track{flex:1;height:7px;background:rgba(255,255,255,.1);border-radius:4px}
+    .pct-fill{height:100%;border-radius:4px}
+    .pct-val{width:26px;font-size:10px;text-align:right}
+    .matrix-grid{
+      display:grid;
+      grid-template-columns:110px repeat(9,1fr);
+      gap:4px;font-size:10px
+    }
+    .matrix-grid div{padding:5px;border-radius:4px;text-align:center}
+    .matrix-label{text-align:left;color:var(--text);font-weight:700}
+    .matrix-hot{background:rgba(232,90,90,.35)}
+    .matrix-cold{background:rgba(90,180,245,.35)}
+    .matrix-neutral{background:rgba(160,180,204,.2)}
+    .note{background:rgba(13,28,58,.7);border-radius:8px;padding:8px;margin-bottom:6px;font-size:12px}
+    .note-tag{color:var(--orange);font-weight:700;font-size:10px}
+    textarea,input{width:100%;background:rgba(13,28,58,.85);border:1px solid rgba(255,255,255,.12);color:#fff;border-radius:8px;padding:6px}
+    @media(max-width:900px){
+      .profile-layout{grid-template-columns:1fr}
+      .profile-card{position:static}
+    }
+  </style>
+</head>
+
+<!-- Session Two -->
+
+
+<body>
+  <!-- HEADER -->
+  <div class="hdr">
+    <div class="dash-title">MLB INTELLIGENCE</div>
+    <div class="hdr-right">
+      <select id="teamSel"></select>
+      <select id="playerSel"></select>
+      <button onclick="refresh()">↻ Refresh</button>
+    </div>
+  </div>
+  <!-- TABS -->
+  <div class="tabs" id="tabs">
+    <div class="tab on" data-tab="profile">Player Profile</div>
+    <div class="tab" data-tab="ts">Team Stats</div>
+    <div class="tab" data-tab="hc">Hot/Cold</div>
+    <div class="tab" data-tab="sp">Pitching</div>
+    <div class="tab" data-tab="mr">Matchups</div>
+    <div class="tab" data-tab="ml">Metric Leaders</div>
+    <div class="tab" data-tab="ri">Roster & IL</div>
+    <div class="tab" data-tab="hs">Headlines</div>
+    <div class="tab" data-tab="sv">Savant</div>
+    <div class="tab" data-tab="fant">Fantasy</div>
+    <div class="tab" data-tab="ll">League Leaders</div>
+    <div class="tab" data-tab="war">WAR Value</div>
+    <div class="tab" data-tab="notes">Scout Notes</div>
+    <div class="tab" data-tab="scout-reports">Scouting Reports</div>
+  </div>
+  <!-- BODY -->
+  <div class="body">
+    <!-- PLAYER PROFILE -->
+    <div class="pg on" id="pg-profile">
+      <div class="profile-layout">
+        <div class="panel profile-card" id="profileCard"></div>
+        <div>
+          <div class="panel">
+            <div class="panel-title">STATCAST PERCENTILES</div>
+            <div id="pctPanel"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-title">ROLLING TRENDS</div>
+            <canvas id="trendChart" height="120"></canvas>
+          </div>
+          <div class="panel">
+            <div class="panel-title">PITCH USAGE BY COUNT</div>
+            <div id="pitchMatrix" class="matrix-grid"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-title">ZONE HEAT MAP (XSLG)</div>
+            <canvas id="zoneHeat" width="300" height="300"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- TEAM STATS -->
+    <div class="pg" id="pg-ts">
+      <!-- Team Stats panel content goes here -->
+    </div>
+    <!-- HOT/COLD -->
+    <div class="pg" id="pg-hc">
+      <!-- Hot/Cold panel content goes here -->
+    </div>
+    <!-- PITCHING -->
+    <div class="pg" id="pg-sp">
+      <!-- Pitching panel content goes here -->
+    </div>
+    <!-- MATCHUPS -->
+    <div class="pg" id="pg-mr">
+      <!-- Matchups panel content goes here -->
+    </div>
+    <!-- METRIC LEADERS -->
+    <div class="pg" id="pg-ml">
+      <!-- Metric Leaders panel content goes here -->
+    </div>
+    <!-- ROSTER & IL -->
+    <div class="pg" id="pg-ri">
+      <!-- Roster & IL panel content goes here -->
+    </div>
+    <!-- HEADLINES -->
+    <div class="pg" id="pg-hs">
+      <!-- Headlines panel content goes here -->
+    </div>
+    <!-- SAVANT -->
+    <div class="pg" id="pg-sv">
+      <!-- Savant panel content goes here -->
+    </div>
+    <!-- FANTASY -->
+    <div class="pg" id="pg-fant">
+      <!-- Fantasy panel content goes here -->
+    </div>
+    <!-- LEAGUE LEADERS -->
+    <div class="pg" id="pg-ll">
+      <!-- League Leaders panel content goes here -->
+    </div>
+    <!-- WAR VALUE -->
+    <div class="pg" id="pg-war">
+      <!-- WAR Value panel content goes here -->
+    </div>
+    <!-- SCOUT NOTES -->
+    <div class="pg" id="pg-notes">
+      <!-- Scout Notes panel content goes here -->
+    </div>
+    <!-- SCOUTING REPORTS -->
+    <div class="pg" id="pg-scout-reports">
+      <!-- Scouting Reports panel content goes here -->
+    </div>
+  </div>
+
+<!-- Session Three -->
+
+
+<script>
+// ========== GLOBAL STATE ==========
+let currentPlayer = null;
+let notes = JSON.parse(localStorage.getItem('scoutNotes')||'[]');
+let curTeam = null, curCat = 'AVG', leadersCache = {}, allTeamRankings = null;
+let curLLCat = 'battingAverage', curLLGrp = 'hitting';
+let noteTags = [], savedNotes = [], activeTagFilter = null;
+let rosterCache = {};
+
+// ========== TEAMS ==========
+const TEAMS = [
+  {id:109,name:"Arizona Diamondbacks",abbr:"ARI",div:"NL West"},
+  {id:144,name:"Atlanta Braves",abbr:"ATL",div:"NL East"},
+  {id:110,name:"Baltimore Orioles",abbr:"BAL",div:"AL East"},
+  {id:111,name:"Boston Red Sox",abbr:"BOS",div:"AL East"},
+  {id:112,name:"Chicago Cubs",abbr:"CHC",div:"NL Central"},
+  {id:145,name:"Chicago White Sox",abbr:"CWS",div:"AL Central"},
+  {id:113,name:"Cincinnati Reds",abbr:"CIN",div:"NL Central"},
+  {id:114,name:"Cleveland Guardians",abbr:"CLE",div:"AL Central"},
+  {id:115,name:"Colorado Rockies",abbr:"COL",div:"NL West"},
+  {id:116,name:"Detroit Tigers",abbr:"DET",div:"AL Central"},
+  {id:117,name:"Houston Astros",abbr:"HOU",div:"AL West"},
+  {id:118,name:"Kansas City Royals",abbr:"KC",div:"AL Central"},
+  {id:108,name:"Los Angeles Angels",abbr:"LAA",div:"AL West"},
+  {id:119,name:"Los Angeles Dodgers",abbr:"LAD",div:"NL West"},
+  {id:146,name:"Miami Marlins",abbr:"MIA",div:"NL East"},
+  {id:158,name:"Milwaukee Brewers",abbr:"MIL",div:"NL Central"},
+  {id:142,name:"Minnesota Twins",abbr:"MIN",div:"AL Central"},
+  {id:121,name:"New York Mets",abbr:"NYM",div:"NL East"},
+  {id:147,name:"New York Yankees",abbr:"NYY",div:"AL East"},
+  {id:133,name:"Athletics",abbr:"ATH",div:"AL West"},
+  {id:143,name:"Philadelphia Phillies",abbr:"PHI",div:"NL East"},
+  {id:134,name:"Pittsburgh Pirates",abbr:"PIT",div:"NL Central"},
+  {id:135,name:"San Diego Padres",abbr:"SD",div:"NL West"},
+  {id:137,name:"San Francisco Giants",abbr:"SF",div:"NL West"},
+  {id:136,name:"Seattle Mariners",abbr:"SEA",div:"AL West"},
+  {id:138,name:"St. Louis Cardinals",abbr:"STL",div:"NL Central"},
+  {id:139,name:"Tampa Bay Rays",abbr:"TB",div:"AL East"},
+  {id:140,name:"Texas Rangers",abbr:"TEX",div:"AL West"},
+  {id:141,name:"Toronto Blue Jays",abbr:"TOR",div:"AL East"},
+  {id:120,name:"Washington Nationals",abbr:"WSH",div:"NL East"}
+];
+
+// ========== TABS ==========
+document.getElementById('tabs').onclick = e=>{
+  const t=e.target.closest('.tab'); if(!t)return;
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.pg').forEach(x=>x.classList.remove('on'));
+  t.classList.add('on');
+  document.getElementById('pg-'+t.dataset.tab).classList.add('on');
+  // Panel-specific triggers
+  if(t.dataset.tab==='ll')loadLeagueLeaders(curLLCat,curLLGrp);
+  if(t.dataset.tab==='notes')renderNotes();
+  if(t.dataset.tab==='fant'&&curTeam)loadFantasy(curTeam);
+};
+
+// ========== TEAM & PLAYER SELECTORS ==========
+const teamSel=document.getElementById('teamSel');
+const playerSel=document.getElementById('playerSel');
+TEAMS.slice().sort((a,b)=>a.name.localeCompare(b.name)).forEach(t=>{
+  let o=document.createElement('option');
+  o.value=t.id;o.textContent=t.name;
+  teamSel.appendChild(o);
+});
+teamSel.onchange=()=>loadRoster(teamSel.value);
+
+// ========== LOAD ROSTER ==========
+async function loadRoster(teamId){
+  playerSel.innerHTML='';
+  const data=await fetch(`/api/mlb_handler.js?endpoint=roster&team=${teamId}`).then(r=>r.json()).catch(()=>[]);
+  (data.roster||[]).forEach(p=>{
+    let o=document.createElement('option');
+    o.value=p.person.id;o.textContent=p.person.fullName;
+    playerSel.appendChild(o);
+  });
+  if(playerSel.options.length){
+    playerSel.selectedIndex=0;
+    loadPlayer(playerSel.value);
+  }
+}
+playerSel.onchange=()=>loadPlayer(playerSel.value);
+
+// ========== LOAD PLAYER PROFILE ==========
+async function loadPlayer(pid){
+  currentPlayer=pid;
+  const p=await fetch(`/api/mlb_handler.js?endpoint=player&id=${pid}`).then(r=>r.json()).catch(()=>null);
+  let person=p&&p.people&&p.people[0]?p.people[0]:null;
+  let stats=person&&person.stats?person.stats:[];
+  let hit=stats.find(s=>s.group&&s.group.displayName==='hitting')||{};
+  let s=hit.splits&&hit.splits[0]?hit.splits[0].stat||{}:{};
+  let profile={
+    name:person?person.fullName:'Sample Player',
+    pos:person&&person.primaryPosition?person.primaryPosition.abbreviation:'RF',
+    bats:person?person.batSide.code+'/'+person.throwSide.code:'L/L',
+    age:person?person.currentAge:25,
+    stats:{
+      AVG:s.avg||'.261',OBP:s.obp||'.361',SLG:s.slg||'.500',OPS:s.ops||'.861',HR:s.homeRuns||5,SB:s.stolenBases||4
+    },
+    percentiles:{
+      AVG:percentile(s.avg,0.185,0.360),OBP:percentile(s.obp,0.250,0.430),SLG:percentile(s.slg,0.290,0.620),OPS:percentile(s.ops,0.540,1.050),
+      HR:percentile(s.homeRuns,0,45),BB:percentile(s.baseOnBalls/Math.max(s.plateAppearances||1,1)*100,3,18),K:percentile(s.strikeOuts/Math.max(s.plateAppearances||1,1)*100,10,36,true)
+    }
+  };
+  renderProfile(profile);
+  renderPercentiles(profile.percentiles);
+  renderMatrix(await getPitchMatrix(pid));
+  renderZone(await getZoneHeat(pid));
+  renderTrend();
+}
+function percentile(val,min,max,inv){
+  val=parseFloat(val)||0;
+  let p=Math.round(((val-min)/(max-min))*100);
+  p=Math.max(1,Math.min(99,p));
+  return inv?100-p:p;
+}
+
+// ========== RENDER PROFILE ==========
+function renderProfile(p){
+  document.getElementById('profileCard').innerHTML=`
+    <div style="display:flex;gap:12px;align-items:center">
+      <div class="profile-photo"><img src="https://img.mlbstatic.com/mlb-photos/image/upload/v1/people/${currentPlayer}/headshot/67/current"></div>
+      <div>
+        <div class="profile-name">${p.name}</div>
+        <div class="meta">${p.pos} · ${p.bats} · Age ${p.age}</div>
+      </div>
+    </div>
+    <div class="stat-grid">
+      ${Object.entries(p.stats).map(s=>`
+        <div class="stat-box">
+          <div class="stat-label">${s[0]}</div>
+          <div class="stat-val">${s[1]}</div>
+        </div>`).join('')}
+    </div>
+    <div class="tool-grid">
+      <div class="tool"><div class="tool-name">HIT</div><div class="tool-grade">${gradeFromPct(p.percentiles.AVG)}</div></div>
+      <div class="tool"><div class="tool-name">PWR</div><div class="tool-grade">${gradeFromPct(p.percentiles.SLG)}</div></div>
+      <div class="tool"><div class="tool-name">RUN</div><div class="tool-grade">${gradeFromPct(p.percentiles.SB)}</div></div>
+      <div class="tool"><div class="tool-name">FLD</div><div class="tool-grade">50</div></div>
+      <div class="tool"><div class="tool-name">ARM</div><div class="tool-grade">50</div></div>
+    </div>
+  `;
+}
+function gradeFromPct(p){
+  if(p>=90)return 80;if(p>=75)return 70;if(p>=60)return 60;if(p>=45)return 50;if(p>=30)return 40;if(p>=15)return 30;return 20;
+}
+
+// ========== PERCENTILES ==========
+function renderPercentiles(p){
+  const c=document.getElementById('pctPanel');c.innerHTML='';
+  Object.entries(p).forEach(([k,v])=>{
+    const color=v>=70?'#4dce8a':v>=40?'#f5c842':'#e85a5a';
+    c.innerHTML+=`
+      <div class="pct-row">
+        <div class="pct-label">${k}</div>
+        <div class="pct-track"><div class="pct-fill" style="width:${v}%;background:${color}"></div></div>
+        <div class="pct-val">${v}</div>
+      </div>`;
+  });
+}
+
+// ========== MATRIX ==========
+async function getPitchMatrix(pid){
+  // Example: fetch from your proxy
+  const data=await fetch(`/api/mlb_handler.js?endpoint=pitch-usage&playerId=${pid}`).then(r=>r.json()).catch(()=>[]);
+  // Example fallback
+  return [
+    {name:'4-Seam',usage:{'0-0':32,'1-1':28,'FULL':48}},
+    {name:'Slider',usage:{'0-0':31,'1-1':31,'FULL':18}}
+  ];
+}
+function renderMatrix(pitches){
+  const counts=['0-0','1-1','FULL'];
+  const m=document.getElementById('pitchMatrix');
+  m.innerHTML='<div></div>'+counts.map(c=>`<div class="matrix-label">${c}</div>`).join('');
+  pitches.forEach(p=>{
+    m.innerHTML+=`<div class="matrix-label">${p.name}</div>`;
+    counts.forEach(c=>{
+      let v=p.usage[c]||0;
+      let cls=v>=35?'matrix-hot':v<=15?'matrix-cold':'matrix-neutral';
+      m.innerHTML+=`<div class="${cls}">${v}%</div>`;
+    });
+  });
+}
+
+// ========== HEATMAP ==========
+async function getZoneHeat(pid){
+  // Example: fetch from your proxy
+  const data=await fetch(`/api/savant_handler.js?type=zone-xslg&playerId=${pid}`).then(r=>r.json()).catch(()=>[]);
+  // Example fallback
+  return [
+    {row:0,col:0,xslg:.610},{row:0,col:1,xslg:.420},{row:0,col:2,xslg:.680},
+    {row:1,col:0,xslg:.310},{row:1,col:1,xslg:.258},{row:1,col:2,xslg:.301},
+    {row:2,col:0,xslg:.245},{row:2,col:1,xslg:.301},{row:2,col:2,xslg:.389}
+  ];
+}
+function renderZone(zones){
+  const ctx=document.getElementById('zoneHeat').getContext('2d');
+  ctx.clearRect(0,0,300,300);
+  zones.forEach(z=>{
+    ctx.fillStyle=z.xslg>.55?'rgba(232,90,90,.6)':z.xslg<.3?'rgba(90,180,245,.6)':'rgba(160,180,204,.4)';
+    ctx.fillRect(z.col*100,z.row*100,100,100);
+  });
+}
+
+// ========== TRENDS ==========
+let trendChart=null;
+function renderTrend(){
+  const ctx=document.getElementById('trendChart').getContext('2d');
+  if(trendChart)trendChart.destroy();
+  trendChart=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:['-30','-25','-20','-15','-10','-5'],
+      datasets:[
+        {label:'OPS',data:[.72,.78,.81,.85,.88,.86],borderColor:'#4dce8a',tension:.3},
+        {label:'xwOBA',data:[.310,.330,.350,.360,.370,.365],borderColor:'#f5c842',tension:.3}
+      ]
+    },
+    options:{plugins:{legend:{labels:{color:'#a0b4cc'}}}}
+  });
+}
+
+// ========== NOTES ==========
+function saveNote(){
+  const n={player:document.getElementById('notePlayer').value,text:document.getElementById('noteText').value};
+  notes.unshift(n);
+  localStorage.setItem('scoutNotes',JSON.stringify(notes));
+  renderNotes();
+}
+function renderNotes(){
+  document.getElementById('notesList').innerHTML=
+    notes.map(n=>`<div class="note"><span class="note-tag">${n.player}</span><br>${n.text}</div>`).join('');
+}
+renderNotes();
+
+// ========== INIT ==========
+teamSel.selectedIndex=0;
+loadRoster(teamSel.value);
+
+// ========== (Insert all other panel logic from mlb_dashboard.html and index copy.html here) ==========
+// This includes: Team Stats, Hot/Cold, Pitching, Matchups, Metric Leaders, Roster, Headlines, Savant, Fantasy, League Leaders, WAR Value, Scout Notes, Scouting Reports, etc.
+// ... (Paste all remaining JS from both files here, do not delete anything) ...
+</script>
+</body>
+</html>
+
+<!-- Session 4 -->
+
+
+// Example: Team Stats Panel
+function loadTeamStats(teamId) {
+  fetch(`/api/mlb_handler.js?endpoint=team-stats&team=${teamId}`)
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('o-avg').textContent = data.avg || '—';
+      document.getElementById('o-ops').textContent = data.ops || '—';
+      document.getElementById('o-hr').textContent = data.homeRuns || '—';
+      document.getElementById('o-rbi').textContent = data.rbi || '—';
+      document.getElementById('o-obp').textContent = data.obp || '—';
+      document.getElementById('o-runs').textContent = data.runs || '—';
+      // Add more stat fields as needed
+    });
+}
+
+// Example: Hot/Cold Panel
+function loadHotCold(teamId) {
+  fetch(`/api/mlb_handler.js?endpoint=hotcold&team=${teamId}`)
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('hc-hhit').innerHTML = data.hotHitters.map(h =>
+        `<div>${h.name} - ${h.avg}</div>`).join('');
+      document.getElementById('hc-chit').innerHTML = data.coldHitters.map(h =>
+        `<div>${h.name} - ${h.avg}</div>`).join('');
+      document.getElementById('hc-hpit').innerHTML = data.hotPitchers.map(p =>
+        `<div>${p.name} - ${p.era}</div>`).join('');
+      document.getElementById('hc-cpit').innerHTML = data.coldPitchers.map(p =>
+        `<div>${p.name} - ${p.era}</div>`).join('');
+    });
+}
+
+// Example: Pitching Panel
+function loadPitching(teamId) {
+  fetch(`/api/mlb_handler.js?endpoint=pitching&team=${teamId}`)
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('sp-body').innerHTML = data.pitchers.map(p => `
+        <tr>
+          <td>${p.name}</td>
+          <td>${p.wins}</td>
+          <td>${p.losses}</td>
+          <td>${p.era}</td>
+          <td>${p.ip}</td>
+          <td>${p.so}</td>
+          <td>${p.whip}</td>
+          <td>${p.gs}</td>
+          <td>${p.bb}</td>
+          <td>${p.k9}</td>
+        </tr>
+      `).join('');
+    });
+}
+
+// Example: Matchups Panel
+function loadMatchups(teamId) {
+  fetch(`/api/mlb_handler.js?endpoint=matchups&team=${teamId}`)
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('mr-results').innerHTML = data.recent.map(g => `
+        <tr>
+          <td>${g.date}</td>
+          <td>${g.opp}</td>
+          <td>${g.score}</td>
+          <td>${g.result}</td>
+          <td>${g.decision}</td>
+        </tr>
+      `).join('');
+      document.getElementById('mr-upcoming').innerHTML = data.upcoming.map(g => `
+        <tr>
+          <td>${g.date}</td>
+          <td>${g.opp}</td>
+          <td>${g.time}</td>
+          <td>${g.probable}</td>
+        </tr>
+      `).join('');
+    });
+}
+
+// Example: Metric Leaders Panel
+function loadMetricLeaders(teamId) {
+  fetch(`/api/mlb_handler.js?endpoint=metric-leaders&team=${teamId}`)
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('ml-off').innerHTML = data.offensive.map(cat => `
+        <div class="ml-card">
+          <div class="ml-cat">${cat.category}</div>
+          ${cat.leaders.map(l => `<div class="ml-row"><span>${l.name}</span><span class="ml-val">${l.value}</span></div>`).join('')}
+        </div>
+      `).join('');
+      document.getElementById('ml-pit').innerHTML = data.pitching.map(cat => `
+        <div class="ml-card">
+          <div class="ml-cat">${cat.category}</div>
+          ${cat.leaders.map(l => `<div class="ml-row"><span>${l.name}</span><span class="ml-val">${l.value}</span></div>`).join('')}
+        </div>
+      `).join('');
+    });
+}
+
+// Repeat similar blocks for Roster & IL, Headlines, Savant, Fantasy, League Leaders, WAR Value, Scout Notes, Scouting Reports, etc.
+
+// On team change, call all panel loaders:
+function loadTeam(teamId) {
+  curTeam = parseInt(teamId);
+  loadTeamStats(curTeam);
+  loadHotCold(curTeam);
+  loadPitching(curTeam);
+  loadMatchups(curTeam);
+  loadMetricLeaders(curTeam);
+  // ...and so on for all panels
+}
+teamSel.value = TEAMS[0].id;
+loadTeam(TEAMS[0].id);
+</script>
+``
+

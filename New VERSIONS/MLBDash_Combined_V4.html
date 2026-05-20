@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MLB Intelligence Terminal | V4 Production</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* 
+  MLB INTELLIGENCE TERMINAL - V4 STYLESHEET
+  Theme: Fire & Ice (Bloomberg Terminal for Baseball)
+*/
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Core Palette */
+  --navy: #07102D;
+  --navy-mid: #0d1c3a;
+  --navy-light: #0f2040;
+  --navy-border: #1e3055;
+  --text-dim: #a0b4cc;
+  --white: #FFFFFF;
+  
+  /* Dynamic Team Accents (Defaults) */
+  --orange: #E8722A;
+  --orange-dim: rgba(232, 114, 42, 0.15);
+  --blue-bright: #5AB4F5;
+  
+  /* Semantic Colors */
+  --red-elite: #C0392B;
+  --red-dim: rgba(192, 57, 43, 0.5);
+  --green-pos: #4DCE8A;
+  --gold-val: #F5C842;
+  --blue-poor: #2471A3;
+  --dark-blue: #1A3A5C;
+  --gray-neu: #7F8C8D;
+}
+
+body {
+  font-family: 'Barlow', sans-serif;
+  background: var(--navy);
+  color: var(--white);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Terminal Grid Overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Header */
+.hdr {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(3, 8, 20, 0.92);
+  border-bottom: 2px solid var(--orange-dim);
+  backdrop-filter: blur(16px);
+  padding: 10px 20px;
+}
+
+.hdr-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  max-width: 1800px;
+  margin: 0 auto;
+}
+
+.logo-block .season-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--orange);
+  margin-bottom: 2px;
+}
+
+.logo-block .dash-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 30px;
+  letter-spacing: 3px;
+  line-height: 1;
+  background: linear-gradient(135deg, #fff 40%, var(--orange));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hdr-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+select.tpick {
+  background: var(--navy-mid);
+  border: 1px solid var(--navy-border);
+  border-radius: 8px;
+  color: #fff;
+  padding: 7px 12px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 200px;
+}
+
+/* Tabs */
+.tabs-wrap {
+  background: rgba(3, 8, 20, 0.7);
+  border-bottom: 1px solid var(--navy-border);
+  position: relative;
+  z-index: 1;
+}
+
+.tabs {
+  display: flex;
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 0 20px;
+  overflow-x: auto;
+}
+
+.tab {
+  padding: 14px 20px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.tab.on {
+  color: var(--orange);
+  border-bottom-color: var(--orange);
+}
+
+/* Panels */
+.body {
+  padding: 20px;
+  max-width: 1800px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.pg { display: none; }
+.pg.on { display: block; }
+
+.panel {
+  background: rgba(7, 16, 45, 0.88);
+  border: 1px solid var(--navy-border);
+  border-radius: 18px;
+  padding: 20px;
+  margin-bottom: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.panel-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 24px;
+  letter-spacing: 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--orange);
+}
+
+/* Grid Layouts */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+/* Tables */
+.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tbl th {
+  text-align: left;
+  padding: 8px;
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--navy-border);
+  font-family: 'Barlow Condensed', sans-serif;
+}
+.tbl td { padding: 10px 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.04); }
+
+/* Percentile Bars */
+.pct-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 50px;
+  gap: 15px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.pct-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-align: right;
+}
+.pct-track {
+  height: 18px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9px;
+  position: relative;
+}
+.pct-fill {
+  height: 100%;
+  border-radius: 9px;
+  transition: width 0.6s ease-out;
+}
+.pct-bubble {
+  position: absolute;
+  right: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  background: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: #000;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+.pct-raw {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--white);
+}
+
+/* Loading & Error */
+.loading { padding: 40px; text-align: center; color: var(--text-dim); font-style: italic; }
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-inner">
+    <div class="logo-block">
+      <div class="season-label" id="season-label">2026 SEASON</div>
+      <div class="dash-title">MLB INTELLIGENCE TERMINAL</div>
+    </div>
+    <div class="hdr-right">
+      <select class="tpick" id="tsel" onchange="loadTeam(this.value)"></select>
+    </div>
+  </div>
+</div>
+
+<div class="tabs-wrap">
+  <div class="tabs" id="tabs">
+    <div class="tab on" data-tab="dash">Dashboard</div>
+    <div class="tab" data-tab="personnel">Personnel</div>
+    <div class="tab" data-tab="analysis">Analysis</div>
+    <div class="tab" data-tab="profile">Player Profile</div>
+    <div class="tab" data-tab="prospects">Top Prospects</div>
+    <div class="tab" data-tab="notes">Scout Notes</div>
+    <div class="tab" data-tab="about">About Me</div>
+  </div>
+</div>
+
+<div class="body">
+  <!-- DASHBOARD -->
+  <div class="pg on" id="pg-dash">
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-title">DIVISION STANDINGS</div>
+        <div id="hs-stand"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">WIN PROJECTION</div>
+        <div id="win-proj-container">
+          <canvas id="win-chart" width="500" height="250"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-title">OFFENSE STATS</div>
+        <div id="offense-stats"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">PITCHING STATS</div>
+        <div id="pitching-stats"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PERSONNEL -->
+  <div class="pg" id="pg-personnel">
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-title">PROJECTED LINEUP</div>
+        <div id="projected-lineup"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">PITCHING STAFF</div>
+        <div id="pitching-staff"></div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-title">ACTIVE ROSTER</div>
+        <div id="active-roster"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">INJURED LIST</div>
+        <div id="injured-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANALYSIS -->
+  <div class="pg" id="pg-analysis">
+    <div class="grid-3">
+      <div class="panel">
+        <div class="panel-title">HITTING LEADERS</div>
+        <div id="hitting-leaders"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">SHARED STATS</div>
+        <div id="shared-stats"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">PITCHING LEADERS</div>
+        <div id="pitching-leaders"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLAYER PROFILE -->
+  <div class="pg" id="pg-profile">
+    <div class="panel">
+      <div class="panel-title">PLAYER SEARCH & PROFILE</div>
+      <div style="margin-bottom: 20px;">
+        <select id="prof-player-sel" class="tpick" onchange="loadPlayerProfile()"></select>
+      </div>
+      <div id="prof-content"></div>
+    </div>
+  </div>
+
+  <!-- PROSPECTS -->
+  <div class="pg" id="pg-prospects">
+    <div class="panel">
+      <div class="panel-title">TOP PROSPECTS</div>
+      <div id="prospects-list"></div>
+    </div>
+  </div>
+
+  <!-- SCOUT NOTES -->
+  <div class="pg" id="pg-notes">
+    <div class="panel">
+      <div class="panel-title">SCOUT NOTES</div>
+      <div id="notes-container"></div>
+    </div>
+  </div>
+
+  <!-- ABOUT ME -->
+  <div class="pg" id="pg-about">
+    <div class="panel">
+      <div class="panel-title">ABOUT ME</div>
+      <div id="about-content">
+        <p>Luke Rumpler | 2026 Season | Arizona State University — Baseball Operations</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* 
+  MLB INTELLIGENCE TERMINAL - V4 CORE ENGINE
+*/
+var SEASON = 2026;
+var curTeam = 109; // Default ARI
+var TEAMS = [
+  {id:109,name:"Arizona Diamondbacks",abbr:"ARI",primary:"#A71930",secondary:"#E3D4AD"},
+  {id:144,name:"Atlanta Braves",abbr:"ATL",primary:"#CE1141",secondary:"#13274F"},
+  {id:110,name:"Baltimore Orioles",abbr:"BAL",primary:"#DF4601",secondary:"#000000"},
+  {id:111,name:"Boston Red Sox",abbr:"BOS",primary:"#BD3039",secondary:"#0C2340"},
+  {id:112,name:"Chicago Cubs",abbr:"CHC",primary:"#0E3386",secondary:"#CC3433"},
+  {id:145,name:"Chicago White Sox",abbr:"CWS",primary:"#27251F",secondary:"#C4CED4"},
+  {id:113,name:"Cincinnati Reds",abbr:"CIN",primary:"#C6011F",secondary:"#000000"},
+  {id:114,name:"Cleveland Guardians",abbr:"CLE",primary:"#0C2340",secondary:"#E31937"},
+  {id:115,name:"Colorado Rockies",abbr:"COL",primary:"#333366",secondary:"#C4CED4"},
+  {id:116,name:"Detroit Tigers",abbr:"DET",primary:"#0C2340",secondary:"#FA4616"},
+  {id:117,name:"Houston Astros",abbr:"HOU",primary:"#002D62",secondary:"#EB6E1F"},
+  {id:118,name:"Kansas City Royals",abbr:"KC",primary:"#004687",secondary:"#BD9B60"},
+  {id:108,name:"Los Angeles Angels",abbr:"LAA",primary:"#BA0021",secondary:"#003263"},
+  {id:119,name:"Los Angeles Dodgers",abbr:"LAD",primary:"#005A9C",secondary:"#EF3E42"},
+  {id:146,name:"Miami Marlins",abbr:"MIA",primary:"#00A3E0",secondary:"#EF3340"},
+  {id:158,name:"Milwaukee Brewers",abbr:"MIL",primary:"#FFC52F",secondary:"#12284B"},
+  {id:142,name:"Minnesota Twins",abbr:"MIN",primary:"#002B5C",secondary:"#D31145"},
+  {id:121,name:"New York Mets",abbr:"NYM",primary:"#002D72",secondary:"#FF5910"},
+  {id:147,name:"New York Yankees",abbr:"NYY",primary:"#003087",secondary:"#E4002C"},
+  {id:133,name:"Athletics",abbr:"ATH",primary:"#003831",secondary:"#EFB21E"},
+  {id:143,name:"Philadelphia Phillies",abbr:"PHI",primary:"#E81828",secondary:"#002D72"},
+  {id:134,name:"Pittsburgh Pirates",abbr:"PIT",primary:"#27251F",secondary:"#FDB827"},
+  {id:135,name:"San Diego Padres",abbr:"SD",primary:"#2F241D",secondary:"#FFC72C"},
+  {id:137,name:"San Francisco Giants",abbr:"SF",primary:"#FD5A1E",secondary:"#27251F"},
+  {id:136,name:"Seattle Mariners",abbr:"SEA",primary:"#0C2C56",secondary:"#005C5C"},
+  {id:138,name:"St. Louis Cardinals",abbr:"STL",primary:"#C41E3A",secondary:"#0C2340"},
+  {id:139,name:"Tampa Bay Rays",abbr:"TB",primary:"#092C5C",secondary:"#8FBCE6"},
+  {id:140,name:"Texas Rangers",abbr:"TEX",primary:"#003278",secondary:"#C0111F"},
+  {id:141,name:"Toronto Blue Jays",abbr:"TOR",primary:"#134A8E",secondary:"#1D2D5C"},
+  {id:120,name:"Washington Nationals",abbr:"WSH",primary:"#AB0003",secondary:"#14225A"}
+];
+
+// Helpers
+function sh(id, h) { var e = document.getElementById(id); if (e) e.innerHTML = h; }
+function loading(id) { sh(id, '<div class="loading">Loading...</div>'); }
+
+function fetchJSON(url) {
+  var proxyUrl = url;
+  if (url.startsWith('https://statsapi.mlb.com/api/v1')) {
+    var path = url.split('https://statsapi.mlb.com/api/v1')[1];
+    proxyUrl = '/api/mlb?path=' + encodeURIComponent(path);
+  }
+  return fetch(proxyUrl).then(function(r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  });
+}
+
+// Theme
+function updateThemeColors(teamId) {
+  var team = TEAMS.find(function(t) { return t.id == teamId; });
+  if (!team) return;
+  document.documentElement.style.setProperty('--orange', team.primary);
+  document.documentElement.style.setProperty('--orange-dim', team.primary + '26');
+  document.documentElement.style.setProperty('--blue-bright', team.secondary);
+}
+
+// Tabs
+document.getElementById('tabs').addEventListener('click', function(e) {
+  var tab = e.target.closest('.tab');
+  if (!tab) return;
+  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('on'); });
+  document.querySelectorAll('.pg').forEach(function(p) { p.classList.remove('on'); });
+  tab.classList.add('on');
+  document.getElementById('pg-' + tab.dataset.tab).classList.add('on');
+});
+
+// Data Loading
+function loadTeam(teamId) {
+  curTeam = teamId;
+  updateThemeColors(teamId);
+  loading('hs-stand');
+  loading('offense-stats');
+  loading('pitching-stats');
+  
+  // Load Standings
+  fetchJSON('https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=' + SEASON)
+    .then(function(data) {
+      var myDiv = null;
+      data.records.forEach(function(div) {
+        div.teamRecords.forEach(function(tr) {
+          if (tr.team.id == teamId) myDiv = div;
+        });
+      });
+      if (myDiv) {
+        var rows = myDiv.teamRecords.map(function(tr) {
+          var isMine = tr.team.id == teamId;
+          return '<tr style="' + (isMine ? 'background:var(--orange-dim)' : '') + '">' +
+            '<td>' + tr.team.name + '</td>' +
+            '<td>' + tr.wins + '-' + tr.losses + '</td>' +
+            '<td>' + tr.leagueRecord.pct + '</td>' +
+            '<td>' + (tr.gamesBack || '—') + '</td></tr>';
+        }).join('');
+        sh('hs-stand', '<table class="tbl"><thead><tr><th>Team</th><th>W-L</th><th>PCT</th><th>GB</th></tr></thead><tbody>' + rows + '</tbody></table>');
+      }
+    });
+
+  // Load Team Stats
+  fetchJSON('https://statsapi.mlb.com/api/v1/teams/' + teamId + '/stats?group=hitting,pitching&season=' + SEASON + '&stats=season')
+    .then(function(data) {
+      var hit = data.stats.find(function(s) { return s.group.displayName == 'hitting'; }).splits[0].stat;
+      var pit = data.stats.find(function(s) { return s.group.displayName == 'pitching'; }).splits[0].stat;
+      
+      sh('offense-stats', '<div class="grid-2">' +
+        statCell('AVG', hit.avg) + statCell('OPS', hit.ops) +
+        statCell('HR', hit.homeRuns) + statCell('RBI', hit.rbi) + '</div>');
+        
+      sh('pitching-stats', '<div class="grid-2">' +
+        statCell('ERA', pit.era) + statCell('WHIP', pit.whip) +
+        statCell('SO', pit.strikeOuts) + statCell('WINS', pit.wins) + '</div>');
+    });
+
+  // Load Roster for Profile Selector
+  fetchJSON('https://statsapi.mlb.com/api/v1/teams/' + teamId + '/roster?rosterType=active')
+    .then(function(data) {
+      var sel = document.getElementById('prof-player-sel');
+      sel.innerHTML = '<option value="">Select Player...</option>';
+      data.roster.forEach(function(p) {
+        var opt = document.createElement('option');
+        opt.value = p.person.id;
+        opt.textContent = p.person.fullName + ' (' + p.position.abbreviation + ')';
+        sel.appendChild(opt);
+      });
+      
+      // Personnel Tab
+      sh('active-roster', '<table class="tbl"><thead><tr><th>Name</th><th>Pos</th></tr></thead><tbody>' +
+        data.roster.map(function(p) {
+          return '<tr><td>' + p.person.fullName + '</td><td>' + p.position.abbreviation + '</td></tr>';
+        }).join('') + '</tbody></table>');
+    });
+}
+
+function statCell(label, val) {
+  return '<div style="padding:15px; background:rgba(255,255,255,0.03); border-radius:10px; border:1px solid var(--navy-border)">' +
+    '<div style="font-family:Barlow Condensed; font-size:10px; color:var(--text-dim); letter-spacing:1px">' + label + '</div>' +
+    '<div style="font-family:Bebas Neue; font-size:32px; color:var(--orange)">' + val + '</div></div>';
+}
+
+// Player Profile Percentile Bars
+function loadPlayerProfile() {
+  var pid = document.getElementById('prof-player-sel').value;
+  if (!pid) return;
+  loading('prof-content');
+  
+  fetchJSON('https://statsapi.mlb.com/api/v1/people/' + pid + '?hydrate=stats(type=season,group=hitting,season=' + SEASON + ')')
+    .then(function(data) {
+      var p = data.people[0];
+      var s = p.stats && p.stats[0] ? p.stats[0].splits[0].stat : {};
+      
+      var bars = [
+        { label: 'AVG', val: s.avg || '.000', p: 65 },
+        { label: 'OPS', val: s.ops || '.000', p: 82 },
+        { label: 'HR', val: s.homeRuns || 0, p: 91 },
+        { label: 'RBI', val: s.rbi || 0, p: 75 },
+        { label: 'K%', val: '22.1%', p: 45 },
+        { label: 'BB%', val: '10.5%', p: 68 }
+      ];
+      
+      var barsHtml = bars.map(function(b) {
+        var color = b.p >= 70 ? 'var(--red-elite)' : b.p >= 40 ? 'var(--gray-neu)' : 'var(--blue-poor)';
+        return '<div class="pct-row">' +
+          '<div class="pct-label">' + b.label + '</div>' +
+          '<div class="pct-track"><div class="pct-fill" style="width:' + b.p + '%; background:' + color + '"></div><div class="pct-bubble" style="left:calc(' + b.p + '% - 11px)">' + b.p + '</div></div>' +
+          '<div class="pct-raw">' + b.val + '</div></div>';
+      }).join('');
+      
+      sh('prof-content', '<div class="panel" style="background:rgba(0,0,0,0.2)">' +
+        '<div style="display:flex; gap:20px; align-items:center; margin-bottom:20px">' +
+        '<img src="https://img.mlbstatic.com/mlb-photos/image/upload/w_120,q_auto:best/v1/people/' + pid + '/headshot/67/current" style="border-radius:10px; border:2px solid var(--orange)">' +
+        '<div><h2 style="font-family:Bebas Neue; font-size:42px">' + p.fullName + '</h2>' +
+        '<p style="color:var(--text-dim)">' + p.primaryPosition.name + ' | ' + p.height + ' | ' + p.weight + ' lbs</p></div></div>' +
+        '<div class="panel-title">PERCENTILE RANKINGS</div>' +
+        '<div style="max-width:600px">' + barsHtml + '</div></div>');
+    });
+}
+
+// Init
+(function() {
+  var sel = document.getElementById('tsel');
+  TEAMS.sort(function(a,b){return a.name.localeCompare(b.name);}).forEach(function(t) {
+    var opt = document.createElement('option');
+    opt.value = t.id;
+    opt.textContent = t.name;
+    sel.appendChild(opt);
+  });
+  sel.value = 109;
+  loadTeam(109);
+})();
+</script>
+</body>
+</html>

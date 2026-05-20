@@ -1,0 +1,43 @@
+{
+  "build_command": "pnpm run build",
+  "capabilities": [
+    "server",
+    "db",
+    "user"
+  ],
+  "dev_command": "pnpm run dev",
+  "env_vars": {
+    "DATABASE_URL": "mysql://eFogvMMAU3cxQp6.root:sC3icc109t46UdedrjfU@gateway06.us-east-1.prod.aws.tidbcloud.com:4000/Nd3sMnAuuPhaLXhngZ6ciW?ssl={\"rejectUnauthorized\":true}"
+  },
+  "experiments": [
+    "no_db_push"
+  ],
+  "git_remote": {
+    "repo_url": "s3://vida-prod-gitrepo/webdev-git/310519663654823523/Nd3sMnAuuPhaLXhngZ6ciW",
+    "access_key_id": "ASIAZV3A2ECZE4V4PDL2",
+    "secret_access_key": "pDlxj+W4xJBtpP+gLpUNmkP+/55pc23mQKvrL47Q",
+    "session_token": "IQoJb3JpZ2luX2VjELb//////////wEaCXVzLWVhc3QtMSJGMEQCIEj2W7fZtAeG+q0BgaSRgsLdkZBi/cleQc9ub4P7M5VVAiBYjtRXuOV99RW2MzvV9V544ufmRHMHbVHiU8zoUvVuUyr2Awh/EAQaDDY2NTM4NjA5ODg2NiIM8BgMfGSmQyxeMVrlKtMDCwXltqvcSfZ+zqzt+7CYUqKFRCpwkAnUB8ec6TQSi7/G7ZB/IMVmkYPBAewlzAea35QqoQOpcBOe7a+BWqPRER05Et84xtOWcgLqYs/Q7NJqWcwJ/DM8G4GQk+lptuIRMstXB9D82d7g+/+kmskG1Zxej7fc8cmqA1neBG4RZsgOap03Tiyz90z/exZ6paHRf1hkXLo5NMt490dbHfJKwiSwyFMKBRHvIr6fQRL2VIdL4mMajDdwv0MvHipaRQukHDQK62i6IYKcjyVMORmtX/sRg2QsRNkacDXtX6IwjtFHFJFkEgYCb8nTl8kE4Fa7/LX3kasY1mt8dAFb1G+YuLNmGMLm3EqZUB9/ZvoWvGFRES9pDuPABTOlIYLOh/gKXIuZMhnXZtrs04+CaGTFKZRfi7x5a3M9ZDRQqvhxlqZutghSnY+AziL1Mxr3JVAc/QJ6+Nfk+vH67x/+1QOlsE4z6E8pkfyUaJq2qg/biaHtbn9yhGWVu0qpM1mbkMuY3knjRLZSaxYmDyZcptr/ZJ4IvB7X4DCtiGde2x9S+QLpvfcfCbvVplvqMwl/tQLK5cN0JG0pZnxfrJBV8kmi1gHMSeZgJF9mlKpMGhOk7F7jItgwkqCe0AY6ngGSSmgSruHuqk/5TwrFxi054PYdg6EYS0Wwm01UA9aKwCTEX7o5sKySqSINXo7vtl3dNSrA1MAjwECR3DGA3xGl+0lr4Y6DSJ98pF4xUX0Yxyxm4kLpC9dbhO01cZ8Akianknad322EOysOQnHY6IwLMGTxl1pSnhat6APR+sFrcl5UYxqSCvYzNsp7MBpXl0XSZlNAyTunC3i3vQPCQg==",
+    "expiration": "2026-05-16T09:28:50.000Z"
+  },
+  "name": "mlb-analytics-dashboard",
+  "path": "/home/ubuntu/mlb-analytics-dashboard",
+  "port": 3000,
+  "secrets": {
+    "BUILT_IN_FORGE_API_KEY": "g2beWyCyXpQax5jNq3pkho",
+    "BUILT_IN_FORGE_API_URL": "https://forge.manus.ai",
+    "JWT_SECRET": "aMbDvjLfFVMQuZjjFGFQWz",
+    "OAUTH_SERVER_URL": "https://api.manus.im",
+    "OWNER_NAME": "lucasrumpler",
+    "OWNER_OPEN_ID": "cohKSPWYGgK5za5cBHvzdV",
+    "VITE_ANALYTICS_ENDPOINT": "https://manus-analytics.com",
+    "VITE_ANALYTICS_WEBSITE_ID": "d5aa2217-3dc1-4d7e-b9e9-3c7e61d32d9c",
+    "VITE_APP_ID": "Nd3sMnAuuPhaLXhngZ6ciW",
+    "VITE_APP_LOGO": "https://files.manuscdn.com/user_upload_by_module/web_dev_logo/310519663654823523/yKcmDVXlEptgKFjH.png",
+    "VITE_APP_TITLE": "⚾ MLB Analytics Dashboard",
+    "VITE_FRONTEND_FORGE_API_KEY": "g3ogKyhnVbW34gnhZfiR2b",
+    "VITE_FRONTEND_FORGE_API_URL": "https://forge.manus.ai",
+    "VITE_OAUTH_PORTAL_URL": "https://manus.im"
+  },
+  "template_id": "web-db-user",
+  "test_command": "pnpm test"
+}
